@@ -11,7 +11,8 @@
     "start": "node src/index.js",
     "dev": "NODE_ENV=development tsx watch src/index",
     "format": "npx prettier --write .",
-    "prettier": "prettier --write \"**/*.{js,json,md}\""
+    "prettier": "prettier --write \"**/*.{js,json,md}\"",
+    "precommit": "npm run lint && npm run prettier && npm run build && lint-staged"
   },
   "keywords": [],
   "author": "",
@@ -42,7 +43,12 @@
     }
   },
   "lint-staged": {
-    "*.{js,json,md}": [
+    "*.js": [
+      "eslint --fix",
+      "prettier --write",
+      "git add"
+    ],
+    "*.json": [
       "prettier --write",
       "git add"
     ]
