@@ -8,12 +8,12 @@
   "scripts": {
     "type-check": "tsc",
     "build": "rimraf dist && tsc --noEmit false && tsc-alias",
-    "start": "node src/index.js",
+    "start": "node src/index.ts",
     "dev": "NODE_ENV=development tsx watch src/index",
     "format": "npx prettier --write .",
     "prettier": "prettier --write \"**/*.{js,json,md}\"",
     "precommit": "npm run lint && npm run prettier && npm run build && lint-staged",
-    "lint": "eslint . --ext .js,.ts"
+    "lint": "eslint 'src/**/*.{ts,tsx}'"
   },
   "keywords": [],
   "author": "",
@@ -51,10 +51,6 @@
     "sequelize-cli": "^6.6.2"
   },
   "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "prettier --write"
-    ],
     "*.ts": [
       "eslint --fix",
       "prettier --write"
