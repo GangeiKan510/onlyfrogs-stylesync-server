@@ -1,18 +1,28 @@
 import cors from 'cors';
 import express, { Express, Request, Response } from 'express';
 import 'dotenv/config';
-import webRouter from "./routes/web"
+import bodyParser from 'body-parser';
+import sequelize from './database';
+import webRouter from './routes/web';
 
 const port = process.env.PORT || 3000;
 const app: Express = express();
 
 app.use(express.json());
 app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use("/web", webRouter);
+app.use('/web', webRouter);
 
-app.get('/', (req: Request, res: Response) => res.send('OnlyFrogs StyleSync Server'));
+app.get('/', (req: Request, res: Response) =>
+  res.send('OnlyFrogs StyleSync Server')
+);
+
+sequelize.sync({ force: true }).then(() => {
+  console.log('Database & tables created!');
+});
 
 app.listen(port, () => {
- console.log(`App listening on port: ${port}`);
+  console.log(`App listening on port: ${port}`);
 });

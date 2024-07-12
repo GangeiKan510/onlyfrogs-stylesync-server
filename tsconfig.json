@@ -1,27 +1,12 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "esModuleInterop": true,
+    "target": "ES6",
+    "module": "commonjs",
     "strict": true,
-    "moduleResolution": "node",
-    "noEmit": true,
-
-    "outDir": "dist",
-
-    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitAny": true,
-
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "outDir": "./dist"
   },
-  "tsc-alias": {
-    "resolveFullPaths": true,
-    "verbose": false
-  },
-  "include": ["src"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }
