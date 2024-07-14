@@ -18,15 +18,22 @@ const { POSTGRES_URL, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT } =
 
 const pool = new Pool({
   connectionString: POSTGRES_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
-const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
-  host: DB_HOST,
-  port: Number(DB_PORT),
+const sequelize = new Sequelize(POSTGRES_URL, {
   dialect: 'postgres',
   logging: (msg) =>
     console.log(`[Sequelize] ${new Date().toISOString()} - ${msg}`),
   dialectModule: pg,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
 });
 
 async function testConnection() {
