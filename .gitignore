@@ -4,3 +4,4 @@ dist/
 #local
 .env*
 .vscode/settings.json
+.vercel
