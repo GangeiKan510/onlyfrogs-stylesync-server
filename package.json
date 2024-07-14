@@ -5,6 +5,7 @@
   "name": "onlyfrogs-stylesync-server",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "type-check": "tsc",
     "build": "rimraf dist && tsc --noEmit false && tsc-alias",
