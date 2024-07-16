@@ -2,7 +2,6 @@ import cors from 'cors';
 import express, { Express, Request, Response } from 'express';
 import 'dotenv/config';
 import bodyParser from 'body-parser';
-import sequelize from './database';
 import webRouter from './routes/web';
 
 const port = process.env.PORT || 3000;
@@ -18,10 +17,6 @@ app.use('/web', webRouter);
 app.get('/', (req: Request, res: Response) =>
   res.send('OnlyFrogs StyleSync Server')
 );
-
-sequelize.sync({ force: true }).then(() => {
-  console.log('Database & tables created!');
-});
 
 app.listen(port, () => {
   console.log(`App listening on port: ${port}`);
