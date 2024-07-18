@@ -3,13 +3,32 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING") 
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id                       String            @id @unique @default(uuid())
+  serial                   Int               @unique @default(autoincrement())
+  email                    String            @unique
+  password                 String
+  first_name               String
+  last_name                String
+  birth_date               String
+  gender                   String
+  height                   String
+  skin_tone_classification String
+  style_preferences        String[]
+  favorite_color           String
+  budget_preferences       BudgetPreferences[]
+}
+
+model BudgetPreferences {
+  id      String @id @unique @default(uuid())
+  serial  Int    @unique @default(autoincrement())
+  low     String
+  high    String
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
 }
