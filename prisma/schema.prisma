@@ -21,14 +21,5 @@ model User {
   skin_tone_classification String
   style_preferences        String[]
   favorite_color           String
-  budget_preferences       BudgetPreferences[]
-}
-
-model BudgetPreferences {
-  id      String @id @unique @default(uuid())
-  serial  Int    @unique @default(autoincrement())
-  low     String
-  high    String
-  user_id String
-  user    User   @relation(fields: [user_id], references: [id])
+  budget_preferences       Json @default("{}")
 }
