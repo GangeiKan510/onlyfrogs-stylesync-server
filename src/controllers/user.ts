@@ -11,17 +11,17 @@ export const createUser = async (body: AnyDict) => {
   try {
     const newUser = await prisma.user.create({
       data: {
-        first_name: body.firstName,
-        last_name: body.lastName,
-        email: body.email,
+        first_name: body.first_name || '',
+        last_name: body.last_name || '',
+        email: body.email || '',
         tokens: body.tokens ?? 0,
-        birth_date: body.birthDate ?? null,
+        birth_date: body.birth_date ?? null,
         gender: body.gender ?? null,
         height: body.height ?? null,
-        skin_tone_classification: body.skinToneClassification ?? null,
-        style_preferences: body.stylePreferences ?? [],
-        favorite_color: body.favoriteColor ?? null,
-        budget_preferences: body.budgetPreferences ?? {},
+        skin_tone_classification: body.skin_tone_classification ?? null,
+        style_preferences: body.style_preferences ?? [],
+        favorite_color: body.favorite_color ?? null,
+        budget_preferences: body.budget_preferences ?? {},
       },
     });
 
