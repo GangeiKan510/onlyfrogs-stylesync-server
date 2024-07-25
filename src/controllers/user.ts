@@ -7,7 +7,7 @@ export const getUsers = async () => {
   return users;
 };
 
-export const createUser = async (body: Prisma.UserCreateInput) => {
+export const createUser = async (body: User) => {
   try {
     const newUser = await prisma.user.create({
       data: {
