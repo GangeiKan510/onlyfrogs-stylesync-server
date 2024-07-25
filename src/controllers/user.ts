@@ -1,4 +1,5 @@
 import { AnyDict } from '../types/generate-interfaces';
+import { UserProps } from '../types/user';
 import prisma from './db';
 import { Prisma, User } from '@prisma/client';
 
@@ -7,7 +8,7 @@ export const getUsers = async () => {
   return users;
 };
 
-export const createUser = async (body: Prisma.UserCreateInput) => {
+export const createUser = async (body: UserProps) => {
   try {
     const newUser = await prisma.user.create({
       data: {
