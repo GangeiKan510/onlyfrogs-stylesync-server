@@ -7,13 +7,13 @@ export const getUsers = async () => {
   return users;
 };
 
-export const createUser = async (body: AnyDict) => {
+export const createUser = async (body: Prisma.UserCreateInput) => {
   try {
     const newUser = await prisma.user.create({
       data: {
-        first_name: body.first_name || '',
-        last_name: body.last_name || '',
-        email: body.email || '',
+        first_name: body.first_name,
+        last_name: body.last_name,
+        email: body.email,
         tokens: body.tokens ?? 0,
         birth_date: body.birth_date ?? null,
         gender: body.gender ?? null,
