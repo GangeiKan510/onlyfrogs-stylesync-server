@@ -8,7 +8,7 @@ export const CreateClothingRequestBodySchema = z.object({
 });
 
 export const UserSchema = z.object({
-  firstName: z.string().nonempty({ message: 'First name is required' }),
-  lastName: z.string().nonempty({ message: 'Last name is required' }),
+  first_name: z.string().nonempty({ message: 'First name is required' }),
+  last_name: z.string().nonempty({ message: 'Last name is required' }),
   email: z.string().email({ message: 'Email must be a valid email address' }),
 });
