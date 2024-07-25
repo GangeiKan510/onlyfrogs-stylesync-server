@@ -9,21 +9,20 @@ datasource db {
 }
 
 model User {
-  id     String @id @unique @default(uuid())
-  serial Int    @unique @default(autoincrement())
-
-  tokens                   Int
-  email                    String   @unique
-  password                 String
-  first_name               String
-  last_name                String
-  birth_date               String
-  gender                   String
-  height                   String
-  skin_tone_classification String
-  style_preferences        String[]
-  favorite_color           String
-  budget_preferences       Json     @default("{}")
+  id                     String   @id @unique @default(uuid())
+  serial                 Int      @unique @default(autoincrement())
+  tokens                 Int
+  email                  String   @unique
+  password               String
+  first_name             String
+  last_name              String
+  birth_date             String?
+  gender                 String?
+  height                 String?
+  skin_tone_classification String?
+  style_preferences      String[]
+  favorite_color         String?
+  budget_preferences     Json     @default("{}")
 
   clothes Clothing[]
   closets Closet[]
