@@ -15,7 +15,7 @@ export const createUser = async (body: UserProps) => {
         first_name: body.first_name,
         last_name: body.last_name,
         email: body.email,
-        tokens: body.tokens ?? 0,
+        tokens: body.tokens ?? 150,
         birth_date: body.birth_date ?? null,
         gender: body.gender ?? null,
         height: body.height ?? null,
