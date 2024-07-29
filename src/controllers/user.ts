@@ -3,9 +3,23 @@ import { UserProps } from '../types/user';
 import prisma from './db';
 import { Prisma, User } from '@prisma/client';
 
-export const getUsers = async () => {
-  const users = await prisma.user.findMany();
-  return users;
+export const getUserByEmail = async (email: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw error;
+  }
 };
 
 export const createUser = async (body: UserProps) => {
