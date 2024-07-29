@@ -1,16 +1,23 @@
 import { Request, Response, Router } from 'express';
-import { createUser, getUsers } from '../../controllers/user';
+import { createUser, getUserByEmail } from '../../controllers/user';
 import { UserSchema } from '../../validators/schemas/schemas';
 import { validate } from '../../validators/validate';
 
 const router = Router();
 
-router.get('/get-users', async (req: Request, res: Response, next) => {
+router.post('/get-me', async (req: Request, res: Response, next) => {
   try {
-    const users = await getUsers();
-    res.json(users);
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const user = await getUserByEmail(email);
+
+    res.status(200).json(user);
   } catch (error) {
-    console.log(error);
+    console.error('Error fetching user:', error);
     next(error);
   }
 });
