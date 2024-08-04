@@ -12,3 +12,9 @@ export const UserSchema = z.object({
   last_name: z.string().nonempty({ message: 'Last name is required' }),
   email: z.string().email({ message: 'Email must be a valid email address' }),
 });
+
+export const ClosetSchema = z.object({
+  name: z.string().nonempty({ message: 'Closet name is required' }),
+  description: z.string().nonempty({ message: 'Description name is required' }),
+  user_id: z.string().nonempty({ message: 'User ID is required' }),
+});

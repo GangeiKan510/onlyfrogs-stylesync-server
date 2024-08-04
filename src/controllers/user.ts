@@ -1,7 +1,5 @@
-import { AnyDict } from '../types/generate-interfaces';
 import { UserProps } from '../types/user';
 import prisma from './db';
-import { Prisma, User } from '@prisma/client';
 
 export const getUserByEmail = async (email: string) => {
   try {
