@@ -1,7 +1,10 @@
 import { Request, Response, Router } from 'express';
 import { validate } from '../../validators/validate';
-import { ClosetSchema } from '../../validators/schemas/schemas';
-import { createCloset } from '../../controllers/closet';
+import {
+  ClosetSchema,
+  GetClosetesByIdRequestBodySchema,
+} from '../../validators/schemas/schemas';
+import { createCloset, getAllClosetsByUser } from '../../controllers/closet';
 
 const router = Router();
 
@@ -18,6 +21,23 @@ router.post(
     } catch (error) {
       console.error('Error creating user:', error);
       next(error);
+    }
+  }
+);
+
+router.post(
+  '/my-closets',
+  validate(GetClosetesByIdRequestBodySchema),
+  async (req, res, next) => {
+    try {
+      const { user_id } = req.body;
+
+      const closets = await getAllClosetsByUser(user_id);
+
+      res.json(closets);
+    } catch (err) {
+      console.error(err);
+      next(err);
     }
   }
 );

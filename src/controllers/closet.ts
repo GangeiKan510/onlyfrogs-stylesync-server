@@ -17,3 +17,18 @@ export const createCloset = async (body: ClosetProps) => {
     throw error;
   }
 };
+
+export const getAllClosetsByUser = async (userId: string) => {
+  try {
+    const closets = await prisma.closet.findMany({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    return closets;
+  } catch (error) {
+    console.error('Error retrieving closets for user:', error);
+    throw error;
+  }
+};
