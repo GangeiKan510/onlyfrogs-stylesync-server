@@ -18,3 +18,7 @@ export const ClosetSchema = z.object({
   description: z.string().nonempty({ message: 'Description name is required' }),
   user_id: z.string().nonempty({ message: 'User ID is required' }),
 });
+
+export const GetClosetesByIdRequestBodySchema = z.object({
+  user_id: z.string(),
+});
