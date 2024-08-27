@@ -9,40 +9,45 @@ datasource db {
 }
 
 model User {
-  id                     String   @id @unique @default(uuid())
-  serial                 Int      @unique @default(autoincrement())
-  tokens                 Int
-  email                  String   @unique
-  first_name             String
-  last_name              String
-  birth_date             String?
-  gender                 String?
-  height                 String?
+  id                       String   @id @unique @default(uuid())
+  serial                   Int      @unique @default(autoincrement())
+  tokens                   Int
+  email                    String   @unique
+  first_name               String
+  last_name                String
+  birth_date               String?
+  gender                   String?
+  height                   String?
   skin_tone_classification String?
-  style_preferences      String[]
-  favorite_color         String?
-  budget_preferences     Json     @default("{}")
+  style_preferences        String[]
+  favorite_color           String?
+  budget_preferences       Json     @default("{}")
 
   clothes Clothing[]
   closets Closet[]
+  fits    Fit[]
 }
 
 model Clothing {
-  id     String @id @unique @default(uuid())
-  serial Int    @unique @default(autoincrement())
-
+  id        String   @id @unique @default(uuid())
+  serial    Int      @unique @default(autoincrement())
   image_url String
+  category  String // top, bottom, shoes
+  tags      String[] // winter, etc.
 
   user_id   String
   user      User   @relation(fields: [user_id], references: [id])
   closet_id String
   closet    Closet @relation(fields: [closet_id], references: [id])
+
+  fits_top    Fit[] @relation("TopFit")
+  fits_bottom Fit[] @relation("BottomFit")
+  fits_shoes  Fit[] @relation("ShoesFit")
 }
 
 model Closet {
-  id     String @id @unique @default(uuid())
-  serial Int    @unique @default(autoincrement())
-
+  id          String @id @unique @default(uuid())
+  serial      Int    @unique @default(autoincrement())
   name        String
   description String
 
@@ -50,4 +55,20 @@ model Closet {
   user    User   @relation(fields: [user_id], references: [id])
 
   clothes Clothing[]
+}
+
+model Fit {
+  id     String @id @unique @default(uuid())
+  serial Int    @unique @default(autoincrement())
+
+  top_id    String
+  bottom_id String
+  shoes_id  String
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
+
+  top    Clothing @relation("TopFit", fields: [top_id], references: [id])
+  bottom Clothing @relation("BottomFit", fields: [bottom_id], references: [id])
+  shoes  Clothing @relation("ShoesFit", fields: [shoes_id], references: [id])
 }
