@@ -1,6 +1,7 @@
 'use strict';
 
-var dotenv = require('dotenv');
+import dotenv from 'dotenv';
+
 dotenv.config({
   path: './.env',
 });
@@ -13,4 +14,5 @@ var firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID,
   measurementId: process.env.FIREBASE_MEASUREMENT_ID,
 };
-module.exports = firebaseConfig;
+
+export default firebaseConfig;
