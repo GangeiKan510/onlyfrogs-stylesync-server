@@ -40,6 +40,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       metadata
     );
 
+    console.log('chore: test discord to github webhook integration');
+
     const downloadURL = await getDownloadURL(snapshot.ref);
 
     console.log('File successfully uploaded.');
