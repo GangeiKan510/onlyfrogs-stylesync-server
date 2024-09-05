@@ -9,6 +9,7 @@ import {
 import multer from 'multer';
 import axios from 'axios';
 import firebaseConfig from '../../config/firebase.config';
+import { createClothing } from '../../controllers/clothing';
 
 const router: Router = express.Router();
 
@@ -20,9 +21,13 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded.' });
+    if (!req.file || !req.body.user_id || !req.body.closet_id) {
+      return res
+        .status(400)
+        .json({ error: 'File, user_id, and closet_id are required.' });
     }
+
+    const { user_id, closet_id, category, tags } = req.body;
 
     const dateTime = giveCurrentDateTime();
     const storageRef = ref(
@@ -57,16 +62,30 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       }
     );
 
+    const processedImageUrl = backgroundRemovalResponse.data.file_url;
+
+    const clothingData = {
+      image_url: processedImageUrl,
+      category: category || 'default-category',
+      tags: tags ? tags.split(',') : [],
+      user_id,
+      closet_id,
+    };
+
+    const clothingItem = await createClothing(clothingData);
+
     return res.send({
-      message: 'File uploaded to Firebase Storage and background removed',
+      message:
+        'File uploaded to Firebase Storage, background removed, and clothing created',
       name: req.file.originalname,
       type: req.file.mimetype,
       downloadURL: downloadURL,
       backgroundRemovalResponse: backgroundRemovalResponse.data,
+      clothingItem: clothingItem,
     });
   } catch (error: any) {
     console.error(
-      'Error during file upload or background removal:',
+      'Error during file upload, background removal, or clothing creation:',
       error.message
     );
     return res.status(500).json({ error: 'Internal Server Error' });
