@@ -32,8 +32,8 @@ model Clothing {
   id        String   @id @unique @default(uuid())
   serial    Int      @unique @default(autoincrement())
   image_url String
-  category  String // top, bottom, shoes
-  tags      String[] // winter, etc.
+  category  String   @default("unknown") // top, bottom, shoes
+  tags      String[] @default([]) // winter, etc.
 
   user_id   String
   user      User   @relation(fields: [user_id], references: [id])
