@@ -92,6 +92,44 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+router.post('/upload-only', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'File is required.' });
+    }
+
+    const dateTime = giveCurrentDateTime();
+    const storageRef = ref(
+      storage,
+      `files/${req.file.originalname}_${dateTime}`
+    );
+
+    const metadata = {
+      contentType: req.file.mimetype,
+    };
+
+    const snapshot = await uploadBytesResumable(
+      storageRef,
+      req.file.buffer,
+      metadata
+    );
+
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    console.log('File successfully uploaded to Firebase Storage.');
+
+    return res.send({
+      message: 'File successfully uploaded to Firebase Storage.',
+      name: req.file.originalname,
+      type: req.file.mimetype,
+      downloadURL: downloadURL,
+    });
+  } catch (error: any) {
+    console.error('Error during file upload:', error.message);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 const giveCurrentDateTime = () => {
   const today = new Date();
   const date =
