@@ -92,7 +92,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-router.post('/upload-only', upload.single('file'), async (req, res) => {
+router.post('/analyze-skin-tone', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'File is required.' });
@@ -118,14 +118,28 @@ router.post('/upload-only', upload.single('file'), async (req, res) => {
 
     console.log('File successfully uploaded to Firebase Storage.');
 
+    const formData = new URLSearchParams();
+    formData.append('image_url', downloadURL);
+
+    const analyzeResponse = await axios.post(
+      'http://localhost:4269/analyze-skin-tone/',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    // Only include the skin tone analysis in the response
     return res.send({
-      message: 'File successfully uploaded to Firebase Storage.',
-      name: req.file.originalname,
-      type: req.file.mimetype,
-      downloadURL: downloadURL,
+      skinToneAnalysis: analyzeResponse.data,
     });
   } catch (error: any) {
-    console.error('Error during file upload:', error.message);
+    console.error(
+      'Error during file upload and skin tone analysis:',
+      error.message
+    );
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
