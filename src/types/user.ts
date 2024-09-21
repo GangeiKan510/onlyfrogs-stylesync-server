@@ -5,8 +5,10 @@ export interface UserProps {
   tokens?: number;
   birth_date?: string | null;
   gender?: string | null;
-  height?: number | null;
-  weight?: number | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  location?: string | null;
+
   skin_tone_classification?: string | null;
   season?: string | null;
   sub_season?: string | null;
@@ -17,5 +19,23 @@ export interface UserProps {
   preferred_brands?: string[];
   budget_min?: number | null;
   budget_max?: number | null;
+}
+
+export interface UpdateUserProps {
+  birth_date?: string | null;
+  gender?: string | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
   location?: string | null;
+
+  skin_tone_classification?: string | null;
+  season?: string | null;
+  sub_season?: string | null;
+  skin_tone_complements?: string[];
+  body_type?: string | null;
+  style_preferences?: string[];
+  favorite_colors?: string[];
+  preferred_brands?: string[];
+  budget_min?: number | null;
+  budget_max?: number | null;
 }

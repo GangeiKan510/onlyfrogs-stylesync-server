@@ -1,4 +1,4 @@
-import { UserProps } from '../types/user';
+import { UpdateUserProps, UserProps } from '../types/user';
 import prisma from './db';
 
 export const getUserByEmail = async (email: string) => {
@@ -34,8 +34,8 @@ export const createUser = async (body: UserProps) => {
         tokens: body.tokens ?? 150,
         birth_date: body.birth_date ?? null,
         gender: body.gender ?? null,
-        height: body.height ?? null,
-        weight: body.weight ?? null,
+        height: body.height_cm ?? null,
+        weight: body.weight_kg ?? null,
         skin_tone_classification: body.skin_tone_classification ?? null,
         season: body.season ?? null,
         sub_season: body.sub_season ?? null,
@@ -59,7 +59,7 @@ export const createUser = async (body: UserProps) => {
 
 export const updateUser = async (
   userId: string,
-  updates: Partial<UserProps>
+  updates: Partial<UpdateUserProps>
 ) => {
   try {
     const updatedUser = await prisma.user.update({
@@ -67,12 +67,12 @@ export const updateUser = async (
         id: userId,
       },
       data: {
-        first_name: updates.first_name ?? undefined,
-        last_name: updates.last_name ?? undefined,
         birth_date: updates.birth_date ?? undefined,
         gender: updates.gender ?? undefined,
-        height: updates.height ?? undefined,
-        weight: updates.weight ?? undefined,
+        height: updates.height_cm ?? undefined,
+        weight: updates.weight_kg ?? undefined,
+        location: updates.location ?? undefined,
+
         skin_tone_classification: updates.skin_tone_classification ?? undefined,
         season: updates.season ?? undefined,
         sub_season: updates.sub_season ?? undefined,
@@ -83,7 +83,6 @@ export const updateUser = async (
         preferred_brands: updates.preferred_brands ?? undefined,
         budget_min: updates.budget_min ?? undefined,
         budget_max: updates.budget_max ?? undefined,
-        location: updates.location ?? undefined,
       },
     });
 
