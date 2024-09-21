@@ -7,10 +7,49 @@ export const CreateClothingRequestBodySchema = z.object({
   imageUrl: z.string().url({ message: 'Image URL must be a valid URL' }),
 });
 
-export const UserSchema = z.object({
+export const CreateUserSchema = z.object({
   first_name: z.string().nonempty({ message: 'First name is required' }),
   last_name: z.string().nonempty({ message: 'Last name is required' }),
   email: z.string().email({ message: 'Email must be a valid email address' }),
+});
+
+export const UpdateUserSchema = z.object({
+  id: z.string().nonempty({ message: 'User ID is required' }),
+
+  birth_date: z
+    .string()
+    .optional()
+    .refine((date) => !isNaN(Date.parse(date as string)), {
+      message: 'Invalid date format, expected ISO format',
+    }),
+  gender: z.string().optional(),
+  height_cm: z
+    .number()
+    .min(0, { message: 'Height must be a positive number' })
+    .optional(),
+  weight_kg: z
+    .number()
+    .min(0, { message: 'Weight must be a positive number' })
+    .optional(),
+  location: z.string().optional(),
+
+  skin_tone_classification: z.string().optional(),
+  season: z.string().optional(),
+  sub_season: z.string().optional(),
+  skin_tone_complements: z.array(z.string()).optional(),
+  body_type: z.string().optional(),
+  preferred_style: z.array(z.string()).optional(),
+  favourite_colors: z.array(z.string()).optional(),
+  preferred_brands: z.array(z.string()).optional(),
+
+  budget_min: z
+    .number()
+    .min(0, { message: 'Budget minimum must be a positive number' })
+    .optional(),
+  budget_max: z
+    .number()
+    .min(0, { message: 'Budget maximum must be a positive number' })
+    .optional(),
 });
 
 export const ClosetSchema = z.object({

@@ -1,6 +1,9 @@
 import { Request, Response, Router } from 'express';
-import { createUser, getUserByEmail } from '../../controllers/user';
-import { UserSchema } from '../../validators/schemas/schemas';
+import { createUser, getUserByEmail, updateUser } from '../../controllers/user';
+import {
+  CreateUserSchema,
+  UpdateUserSchema,
+} from '../../validators/schemas/schemas';
 import { validate } from '../../validators/validate';
 
 const router = Router();
@@ -24,7 +27,7 @@ router.post('/get-me', async (req: Request, res: Response, next) => {
 
 router.post(
   '/create-user',
-  validate(UserSchema),
+  validate(CreateUserSchema),
   async (req: Request, res: Response, next) => {
     try {
       const userData = req.body;
@@ -34,6 +37,27 @@ router.post(
       res.status(201).json(newUser);
     } catch (error) {
       console.error('Error creating user:', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-user',
+  validate(UpdateUserSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { id, ...updates } = req.body;
+
+      if (!id) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      const updatedUser = await updateUser(id, updates);
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user:', error);
       next(error);
     }
   }
