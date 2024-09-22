@@ -7,6 +7,32 @@ export const CreateClothingRequestBodySchema = z.object({
   imageUrl: z.string().url({ message: 'Image URL must be a valid URL' }),
 });
 
+export const UpdateClothingRequestBodySchema = z.object({
+  id: z.string().nonempty({ message: 'Clothing ID is required' }),
+
+  name: z.string().optional(),
+  color: z.string().optional(),
+  type: z.string().optional(),
+  imageUrl: z
+    .string()
+    .url({ message: 'Image URL must be a valid URL' })
+    .optional(),
+
+  season: z.array(z.enum(['spring', 'summer', 'autumn', 'winter'])).optional(),
+  occasion: z
+    .array(z.enum(['daily', 'work', 'travel', 'sport', 'formal']))
+    .optional(),
+  category: z
+    .object({
+      name: z.string().nonempty({ message: 'Category name is required' }),
+      type: z.string().nonempty({ message: 'Category type is required' }),
+    })
+    .optional(),
+  material: z.string().optional(),
+  pattern: z.string().optional(),
+  brand: z.string().optional(),
+});
+
 export const CreateUserSchema = z.object({
   first_name: z.string().nonempty({ message: 'First name is required' }),
   last_name: z.string().nonempty({ message: 'Last name is required' }),

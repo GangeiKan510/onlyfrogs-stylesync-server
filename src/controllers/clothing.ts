@@ -1,5 +1,5 @@
 import prisma from './db';
-import { ClothingProps } from '../types/clothing';
+import { ClothingProps, UpdateClothingDetailsProps } from '../types/clothing';
 
 export const createClothing = async (body: ClothingProps) => {
   try {
@@ -16,6 +16,38 @@ export const createClothing = async (body: ClothingProps) => {
     return newClothing;
   } catch (error) {
     console.error('Error creating clothing:', error);
+    throw error;
+  }
+};
+
+export const updateClothing = async (
+  clothingId: string,
+  updates: Partial<UpdateClothingDetailsProps>
+) => {
+  try {
+    const updatedClothing = await prisma.clothing.update({
+      where: {
+        id: clothingId,
+      },
+      data: {
+        image_url: updates.image_url ?? undefined,
+        category: updates.category ?? undefined,
+        tags: updates.tags ?? undefined,
+        user_id: updates.user_id ?? undefined,
+        closet_id: updates.closet_id ?? undefined,
+        season: updates.season ?? undefined,
+        occasion: updates.occasion ?? undefined,
+        material: updates.material ?? undefined,
+        pattern: updates.pattern ?? undefined,
+        brand: updates.brand ?? undefined,
+        color: updates.color ?? undefined,
+        name: updates.name ?? undefined,
+      },
+    });
+
+    return updatedClothing;
+  } catch (error) {
+    console.error('Error updating clothing:', error);
     throw error;
   }
 };
