@@ -18,16 +18,16 @@ export const UpdateClothingRequestBodySchema = z.object({
     .url({ message: 'Image URL must be a valid URL' })
     .optional(),
 
-  season: z.array(z.enum(['spring', 'summer', 'autumn', 'winter'])).optional(),
-  occasion: z
-    .array(z.enum(['daily', 'work', 'travel', 'sport', 'formal']))
-    .optional(),
+  season: z.array(z.string()).optional(),
+  occasion: z.array(z.string()).optional(),
+
   category: z
     .object({
       name: z.string().nonempty({ message: 'Category name is required' }),
       type: z.string().nonempty({ message: 'Category type is required' }),
     })
     .optional(),
+
   material: z.string().optional(),
   pattern: z.string().optional(),
   brand: z.string().optional(),
