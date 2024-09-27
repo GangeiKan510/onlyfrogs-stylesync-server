@@ -87,3 +87,7 @@ export const ClosetSchema = z.object({
 export const GetClosetesByIdRequestBodySchema = z.object({
   user_id: z.string(),
 });
+
+export const ChatSessionSchema = z.object({
+  userId: z.string().uuid('User ID must be a valid UUID'),
+});

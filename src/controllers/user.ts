@@ -1,5 +1,6 @@
 import { UpdateUserProps, UserProps } from '../types/user';
 import prisma from './db';
+import { createChatSession } from './chat';
 
 export const getUserByEmail = async (email: string) => {
   try {
@@ -50,9 +51,18 @@ export const createUser = async (body: UserProps) => {
       },
     });
 
-    return newUser;
+    const chatSessionResult = await createChatSession({ userId: newUser.id });
+
+    if (chatSessionResult.status !== 201 && chatSessionResult.status !== 200) {
+      throw new Error('Failed to create chat session for the new user');
+    }
+
+    return {
+      ...newUser,
+      chatSession: chatSessionResult.session,
+    };
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Error creating user or chat session:', error);
     throw error;
   }
 };
