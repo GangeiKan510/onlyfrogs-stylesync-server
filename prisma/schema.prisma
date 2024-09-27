@@ -34,6 +34,8 @@ model User {
   clothes Clothing[]
   closets Closet[]
   fits    Fit[]
+
+  chatSession ChatSession?
 }
 
 model Clothing {
@@ -87,4 +89,25 @@ model Fit {
   top    Clothing @relation("TopFit", fields: [top_id], references: [id])
   bottom Clothing @relation("BottomFit", fields: [bottom_id], references: [id])
   shoes  Clothing @relation("ShoesFit", fields: [shoes_id], references: [id])
+}
+
+model ChatSession {
+  id        String   @id @unique @default(uuid())
+  createdAt DateTime @default(now())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  messages Message[]
+}
+
+model Message {
+  id        String   @id @unique @default(uuid())
+  createdAt DateTime @default(now())
+
+  role    String
+  content String
+
+  chatSessionId String
+  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id])
 }
