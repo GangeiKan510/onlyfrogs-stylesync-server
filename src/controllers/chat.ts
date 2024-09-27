@@ -39,3 +39,41 @@ export const createChatSession = async (body: ChatSession) => {
     };
   }
 };
+
+export const sendMessage = async (userId: string, userMessage: string) => {
+  try {
+    const chatSession = await prisma.chatSession.findUnique({
+      where: {
+        userId: userId,
+      },
+    });
+
+    if (!chatSession) {
+      return {
+        status: 404,
+        message: 'Chat session not found. Please create a session first.',
+      };
+    }
+
+    const userMessageRecord = await prisma.message.create({
+      data: {
+        chat_session_id: chatSession.id,
+        role: 'user',
+        content: userMessage,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Message saved to chat session successfully',
+      userMessage: userMessageRecord,
+    };
+  } catch (error: any) {
+    console.error('Error saving message:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};

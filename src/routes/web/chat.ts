@@ -2,8 +2,8 @@ import { Request, Response, Router } from 'express';
 import { validate } from '../../validators/validate';
 import { ChatSessionSchema } from '../../validators/schemas/schemas';
 import { createChatSession } from '../../controllers/chat';
-import axios from 'axios';
 import OpenAI from 'openai';
+import { sendMessage } from '../../controllers/chat';
 
 const router = Router();
 
@@ -33,7 +33,7 @@ router.post(
   }
 );
 
-router.post('/prompt-gpt', async (req, res) => {
+router.post('/prompt-gpt', async (req: Request, res: Response) => {
   const { userId, userMessage } = req.body;
 
   if (!userMessage) {
@@ -41,7 +41,13 @@ router.post('/prompt-gpt', async (req, res) => {
   }
 
   try {
-    const response = await openai.chat.completions.create({
+    const saveMessageResult = await sendMessage(userId, userMessage);
+
+    if (saveMessageResult.status !== 200) {
+      return res.status(saveMessageResult.status).json(saveMessageResult);
+    }
+
+    const openaiResponse = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: 'You are a virtual stylist assistant.' },
@@ -49,7 +55,20 @@ router.post('/prompt-gpt', async (req, res) => {
       ],
     });
 
-    const gptResponse = response.choices[0].message.content;
+    const gptResponse = openaiResponse.choices[0]?.message?.content || null;
+
+    if (!gptResponse) {
+      return res.status(500).json({ error: 'No response from OpenAI' });
+    }
+
+    const assistantMessageResult = await sendMessage(userId, gptResponse);
+
+    if (assistantMessageResult.status !== 200) {
+      return res
+        .status(assistantMessageResult.status)
+        .json(assistantMessageResult);
+    }
+
     return res.status(200).json({ userId, message: gptResponse });
   } catch (error) {
     console.error('Error connecting to OpenAI:', error);
