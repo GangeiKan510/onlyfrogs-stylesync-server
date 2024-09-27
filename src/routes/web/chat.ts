@@ -41,10 +41,16 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
   }
 
   try {
-    const saveMessageResult = await sendMessage(userId, userMessage);
+    const saveUserMessageResult = await sendMessage(
+      userId,
+      userMessage,
+      'user'
+    );
 
-    if (saveMessageResult.status !== 200) {
-      return res.status(saveMessageResult.status).json(saveMessageResult);
+    if (saveUserMessageResult.status !== 200) {
+      return res
+        .status(saveUserMessageResult.status)
+        .json(saveUserMessageResult);
     }
 
     const openaiResponse = await openai.chat.completions.create({
@@ -58,15 +64,19 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     const gptResponse = openaiResponse.choices[0]?.message?.content || null;
 
     if (!gptResponse) {
-      return res.status(500).json({ error: 'No response from OpenAI' });
+      return res.status(500).json({ error: 'No valid response from GPT' });
     }
 
-    const assistantMessageResult = await sendMessage(userId, gptResponse);
+    const saveAssistantMessageResult = await sendMessage(
+      userId,
+      gptResponse,
+      'assistant'
+    );
 
-    if (assistantMessageResult.status !== 200) {
+    if (saveAssistantMessageResult.status !== 200) {
       return res
-        .status(assistantMessageResult.status)
-        .json(assistantMessageResult);
+        .status(saveAssistantMessageResult.status)
+        .json(saveAssistantMessageResult);
     }
 
     return res.status(200).json({ userId, message: gptResponse });

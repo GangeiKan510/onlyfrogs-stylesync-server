@@ -40,7 +40,11 @@ export const createChatSession = async (body: ChatSession) => {
   }
 };
 
-export const sendMessage = async (userId: string, userMessage: string) => {
+export const sendMessage = async (
+  userId: string,
+  messageContent: string,
+  role: 'user' | 'assistant'
+) => {
   try {
     const chatSession = await prisma.chatSession.findUnique({
       where: {
@@ -55,18 +59,18 @@ export const sendMessage = async (userId: string, userMessage: string) => {
       };
     }
 
-    const userMessageRecord = await prisma.message.create({
+    const messageRecord = await prisma.message.create({
       data: {
         chat_session_id: chatSession.id,
-        role: 'user',
-        content: userMessage,
+        role: role,
+        content: messageContent,
       },
     });
 
     return {
       status: 200,
       message: 'Message saved to chat session successfully',
-      userMessage: userMessageRecord,
+      savedMessage: messageRecord,
     };
   } catch (error: any) {
     console.error('Error saving message:', error);
