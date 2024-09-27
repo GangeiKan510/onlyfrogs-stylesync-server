@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { validate } from '../../validators/validate';
 import { ChatSessionSchema } from '../../validators/schemas/schemas';
-import { createChatSession } from '../../controllers/chat';
+import { createChatSession, retrieveSessionChat } from '../../controllers/chat';
 import OpenAI from 'openai';
 import { sendMessage } from '../../controllers/chat';
 
@@ -84,6 +84,14 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     console.error('Error connecting to OpenAI:', error);
     return res.status(500).json({ error: 'Error connecting to OpenAI' });
   }
+});
+
+router.post('/retrieve-user-sessions', async (req: Request, res: Response) => {
+  const { userId } = req.body;
+
+  const result = await retrieveSessionChat(userId);
+
+  return res.status(result.status).json(result);
 });
 
 export default router;
