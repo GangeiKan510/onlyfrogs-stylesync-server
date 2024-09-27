@@ -1,26 +1,12 @@
 import { ChatSession } from '@prisma/client';
 import prisma from './db';
 
-export const createChatSession = async (body: ChatSession) => {
+export const createChatSession = async ({ userId }: { userId: string }) => {
   try {
-    const existingSession = await prisma.chatSession.findUnique({
-      where: {
-        userId: body.userId,
-      },
-    });
-
-    if (existingSession) {
-      return {
-        status: 200,
-        message: 'Chat session already exists',
-        session: existingSession,
-      };
-    }
-
     const newSession = await prisma.chatSession.create({
       data: {
         user: {
-          connect: { id: body.userId },
+          connect: { id: userId },
         },
       },
     });
@@ -39,7 +25,6 @@ export const createChatSession = async (body: ChatSession) => {
     };
   }
 };
-
 export const sendMessage = async (
   userId: string,
   messageContent: string,
