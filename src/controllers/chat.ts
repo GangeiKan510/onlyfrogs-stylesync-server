@@ -81,3 +81,36 @@ export const sendMessage = async (
     };
   }
 };
+
+export const retrieveSessionChat = async (userId: string) => {
+  try {
+    const chatSession = await prisma.chatSession.findUnique({
+      where: {
+        userId: userId,
+      },
+      include: {
+        messages: true,
+      },
+    });
+
+    if (!chatSession) {
+      return {
+        status: 404,
+        message: 'Chat session not found.',
+      };
+    }
+
+    return {
+      status: 200,
+      message: 'Chat session retrieved successfully',
+      session: chatSession,
+    };
+  } catch (error: any) {
+    console.error('Error retrieving chat session:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
