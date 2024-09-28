@@ -53,12 +53,29 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         .json(saveUserMessageResult);
     }
 
+    const chatSessionResult = await retrieveSessionChat(userId);
+
+    if (chatSessionResult.status !== 200) {
+      return res.status(chatSessionResult.status).json(chatSessionResult);
+    }
+
+    const chatSession = chatSessionResult.session;
+
+    const previousMessages =
+      chatSession?.messages?.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content,
+      })) ?? [];
+
+    const fullConversation = [
+      { role: 'system', content: 'You are a virtual stylist assistant.' },
+      ...previousMessages,
+      { role: 'user', content: userMessage },
+    ];
+
     const openaiResponse = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a virtual stylist assistant.' },
-        { role: 'user', content: userMessage },
-      ],
+      messages: fullConversation,
     });
 
     const gptResponse = openaiResponse.choices[0]?.message?.content || null;
