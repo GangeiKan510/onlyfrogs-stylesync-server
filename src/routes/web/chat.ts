@@ -4,6 +4,7 @@ import { ChatSessionSchema } from '../../validators/schemas/schemas';
 import { createChatSession, retrieveSessionChat } from '../../controllers/chat';
 import OpenAI from 'openai';
 import { sendMessage } from '../../controllers/chat';
+import { getUserById } from '../../controllers/user';
 
 const router = Router();
 
@@ -41,6 +42,14 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
   }
 
   try {
+    const userResult = await getUserById(userId);
+
+    if (userResult.status !== 200) {
+      return res.status(userResult.status).json(userResult);
+    }
+
+    const user = userResult.user;
+
     const saveUserMessageResult = await sendMessage(
       userId,
       userMessage,
@@ -53,22 +62,28 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         .json(saveUserMessageResult);
     }
 
-    const chatSessionResult = await retrieveSessionChat(userId);
-
-    if (chatSessionResult.status !== 200) {
-      return res.status(chatSessionResult.status).json(chatSessionResult);
-    }
-
-    const chatSession = chatSessionResult.session;
-
     const previousMessages =
-      chatSession?.messages?.map((msg: any) => ({
+      user?.chat_ession?.messages.map((msg: any) => ({
         role: msg.role,
         content: msg.content,
       })) ?? [];
 
+    console.log(user);
+
+    const systemMessageContent = `
+      You are a virtual stylist assistant named Ali.
+      Always suggest clothes from user's closet and based on their preference:
+      - Style preferences: ${user?.style_preferences.join(', ')}
+      - Favorite colors: ${user?.favorite_colors.join(', ')}
+      - Preferred brands: ${user?.preferred_brands.join(', ')}
+      - Body type: ${user?.body_type}
+      - Season: ${user?.season}
+      - Budget: ${user?.budget_min} - ${user?.budget_max}
+      The user has the following clothing items:
+      ${user?.clothes.map((clothing) => clothing.name).join(', ')}
+    `;
     const fullConversation = [
-      { role: 'system', content: 'You are a virtual stylist assistant.' },
+      { role: 'system', content: systemMessageContent },
       ...previousMessages,
       { role: 'user', content: userMessage },
     ];

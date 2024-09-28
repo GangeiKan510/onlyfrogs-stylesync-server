@@ -25,6 +25,45 @@ export const getUserByEmail = async (email: string) => {
   }
 };
 
+export const getUserById = async (userId: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include: {
+        closets: true,
+        clothes: true,
+        fits: true,
+        chat_ession: {
+          include: {
+            messages: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return {
+        status: 404,
+        message: 'User not found',
+      };
+    }
+
+    return {
+      status: 200,
+      user,
+    };
+  } catch (error: any) {
+    console.error('Error fetching user:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
+
 export const createUser = async (body: UserProps) => {
   try {
     const newUser = await prisma.user.create({
