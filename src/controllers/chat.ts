@@ -25,6 +25,7 @@ export const createChatSession = async ({ userId }: { userId: string }) => {
     };
   }
 };
+
 export const sendMessage = async (
   userId: string,
   messageContent: string,
@@ -92,6 +93,41 @@ export const retrieveSessionChat = async (userId: string) => {
     };
   } catch (error: any) {
     console.error('Error retrieving chat session:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
+
+export const deleteChatSessionMessages = async (userId: string) => {
+  try {
+    const chatSession = await prisma.chatSession.findUnique({
+      where: {
+        userId: userId,
+      },
+    });
+
+    if (!chatSession) {
+      return {
+        status: 404,
+        message: 'Chat session not found for this user.',
+      };
+    }
+
+    await prisma.message.deleteMany({
+      where: {
+        chat_session_id: chatSession.id,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'All messages in the chat session deleted successfully.',
+    };
+  } catch (error: any) {
+    console.error('Error deleting messages from chat session:', error);
     return {
       status: 500,
       message: 'Internal Server Error',

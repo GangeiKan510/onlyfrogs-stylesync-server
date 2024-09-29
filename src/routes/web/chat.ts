@@ -1,7 +1,8 @@
 import { Request, Response, Router } from 'express';
-import { validate } from '../../validators/validate';
-import { ChatSessionSchema } from '../../validators/schemas/schemas';
-import { createChatSession, retrieveSessionChat } from '../../controllers/chat';
+import {
+  deleteChatSessionMessages,
+  retrieveSessionChat,
+} from '../../controllers/chat';
 import OpenAI from 'openai';
 import axios from 'axios';
 import { sendMessage } from '../../controllers/chat';
@@ -159,5 +160,20 @@ router.post('/retrieve-user-sessions', async (req: Request, res: Response) => {
 
   return res.status(result.status).json(result);
 });
+
+router.delete(
+  '/delete-chat-session-messages',
+  async (req: Request, res: Response) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const result = await deleteChatSessionMessages(userId);
+
+    return res.status(result.status).json(result);
+  }
+);
 
 export default router;
