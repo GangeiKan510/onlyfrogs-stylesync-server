@@ -99,6 +99,8 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       Always suggest clothes from the user's closet first, and if there aren't enough, suggest generic items based on the weather.
       - User Details: ${user?.first_name} ${user?.last_name}
       - Location: ${locationName}
+      - Skin Tone: ${user?.skin_tone_classification}
+      - Clothing Colors That Complement: ${user?.skin_tone_complements}
       - Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
       - Height: ${user?.height} cm, Weight: ${user?.weight} kg
       - Style preferences: ${user?.style_preferences.join(', ')}
