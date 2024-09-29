@@ -3,6 +3,7 @@ import { validate } from '../../validators/validate';
 import { ChatSessionSchema } from '../../validators/schemas/schemas';
 import { createChatSession, retrieveSessionChat } from '../../controllers/chat';
 import OpenAI from 'openai';
+import axios from 'axios';
 import { sendMessage } from '../../controllers/chat';
 import { getUserById } from '../../controllers/user';
 
@@ -12,28 +13,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-router.post(
-  '/create-session',
-  validate(ChatSessionSchema),
-  async (req: Request, res: Response, next) => {
-    try {
-      const chatSessionData = req.body;
-      const result = await createChatSession(chatSessionData);
-
-      if (result.status === 201) {
-        res.status(201).json(result);
-      } else if (result.status === 200) {
-        res.status(200).json(result);
-      } else {
-        res.status(500).json(result);
-      }
-    } catch (error) {
-      console.error('Error creating chat session:', error);
-      next(error);
-    }
-  }
-);
-
 router.post('/prompt-gpt', async (req: Request, res: Response) => {
   const { userId, userMessage } = req.body;
 
@@ -42,20 +21,49 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
   }
 
   try {
+    // Fetch user data
     const userResult = await getUserById(userId);
-
     if (userResult.status !== 200) {
       return res.status(userResult.status).json(userResult);
     }
 
     const user = userResult.user;
 
+    let lat: string | undefined;
+    let lon: string | undefined;
+    let locationName: string | undefined;
+
+    if (user?.location) {
+      const locationData = user.location as {
+        lat: string;
+        lon: string;
+        name: string;
+      };
+
+      lat = locationData?.lat;
+      lon = locationData?.lon;
+      locationName = locationData?.name;
+    }
+
+    if (!lat || !lon) {
+      return res.status(400).json({ error: 'User location is missing' });
+    }
+
+    const openWeatherApiKey = process.env.OPENWEATHER_API_KEY;
+    const weatherResponse = await axios.get(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherApiKey}&units=metric`
+    );
+
+    const weatherData = weatherResponse.data;
+    const temperature = weatherData.main.temp;
+    const weatherDescription = weatherData.weather[0].description;
+    const windSpeed = weatherData.wind.speed;
+
     const saveUserMessageResult = await sendMessage(
       userId,
       userMessage,
       'user'
     );
-
     if (saveUserMessageResult.status !== 200) {
       return res
         .status(saveUserMessageResult.status)
@@ -68,19 +76,40 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         content: msg.content,
       })) ?? [];
 
-    console.log(user);
+    const userClothes = user?.clothes || [];
+    const enoughClothes = userClothes.length >= 3;
+
+    let clothingMessage = '';
+
+    if (enoughClothes) {
+      clothingMessage = `
+        The user has enough clothing items, suggest an outfit using their closet. 
+        Make sure the items fit well together based on style preferences and weather.
+      `;
+    } else {
+      clothingMessage = `
+        The user does not have enough clothes in their closet or it's empty. 
+        Suggest generic items based on the current weather conditions: 
+        Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
+      `;
+    }
 
     const systemMessageContent = `
       You are a virtual stylist assistant named Ali.
-      Always suggest clothes from user's closet and based on their preference:
+      Always suggest clothes from the user's closet first, and if there aren't enough, suggest generic items based on the weather.
+      - User Details: ${user?.first_name} ${user?.last_name}
+      - Location: ${locationName}
+      - Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
+      - Height: ${user?.height} cm, Weight: ${user?.weight} kg
       - Style preferences: ${user?.style_preferences.join(', ')}
       - Favorite colors: ${user?.favorite_colors.join(', ')}
       - Preferred brands: ${user?.preferred_brands.join(', ')}
       - Body type: ${user?.body_type}
       - Season: ${user?.season}
       - Budget: ${user?.budget_min} - ${user?.budget_max}
+      ${clothingMessage}
       The user has the following clothing items:
-      ${user?.clothes.map((clothing) => clothing.name).join(', ')}
+      ${userClothes.map((clothing) => clothing.name).join(', ')}
     `;
     const fullConversation = [
       { role: 'system', content: systemMessageContent },
@@ -113,8 +142,11 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 
     return res.status(200).json({ userId, message: gptResponse });
   } catch (error) {
-    console.error('Error connecting to OpenAI:', error);
-    return res.status(500).json({ error: 'Error connecting to OpenAI' });
+    console.error(
+      'Error connecting to OpenAI or fetching weather data:',
+      error
+    );
+    return res.status(500).json({ error: 'Error processing the request' });
   }
 });
 
