@@ -1,6 +1,7 @@
 import { UpdateUserProps, UserProps } from '../types/user';
 import prisma from './db';
 import { createChatSession } from './chat';
+import { Prisma } from '@prisma/client';
 
 export const getUserByEmail = async (email: string) => {
   try {
@@ -86,7 +87,13 @@ export const createUser = async (body: UserProps) => {
         preferred_brands: body.preferred_brands ?? [],
         budget_min: body.budget_min ?? null,
         budget_max: body.budget_max ?? null,
-        location: body.location ?? null,
+        location: body.location
+          ? {
+              lat: body.location.lat,
+              lon: body.location.lon,
+              name: body.location.name,
+            }
+          : Prisma.DbNull,
       },
     });
 
@@ -120,7 +127,13 @@ export const updateUser = async (
         gender: updates.gender ?? undefined,
         height: updates.height_cm ?? undefined,
         weight: updates.weight_kg ?? undefined,
-        location: updates.location ?? undefined,
+        location: updates.location
+          ? {
+              lat: updates.location.lat,
+              lon: updates.location.lon,
+              name: updates.location.name,
+            }
+          : undefined,
 
         skin_tone_classification: updates.skin_tone_classification ?? undefined,
         season: updates.season ?? undefined,
