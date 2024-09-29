@@ -57,7 +57,14 @@ export const UpdateUserSchema = z.object({
     .number()
     .min(0, { message: 'Weight must be a positive number' })
     .optional(),
-  location: z.string().optional(),
+
+  location: z
+    .object({
+      lat: z.string().nonempty({ message: 'Latitude is required' }),
+      lon: z.string().nonempty({ message: 'Longitude is required' }),
+      name: z.string().nonempty({ message: 'Location name is required' }),
+    })
+    .optional(),
 
   skin_tone_classification: z.string().optional(),
   season: z.string().optional(),

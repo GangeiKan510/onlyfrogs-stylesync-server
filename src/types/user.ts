@@ -7,7 +7,11 @@ export interface UserProps {
   gender?: string | null;
   height_cm?: number | null;
   weight_kg?: number | null;
-  location?: string | null;
+  location?: {
+    lat: string;
+    lon: string;
+    name: string;
+  } | null;
 
   skin_tone_classification?: string | null;
   season?: string | null;
@@ -26,7 +30,11 @@ export interface UpdateUserProps {
   gender?: string | null;
   height_cm?: number | null;
   weight_kg?: number | null;
-  location?: string | null;
+  location?: {
+    lat: string;
+    lon: string;
+    name: string;
+  } | null;
 
   skin_tone_classification?: string | null;
   season?: string | null;
