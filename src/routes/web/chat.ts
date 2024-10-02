@@ -33,6 +33,9 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     let lat: string | undefined;
     let lon: string | undefined;
     let locationName: string | undefined;
+    let weatherDescription: string | undefined;
+    let temperature: string | undefined;
+    let windSpeed: string | undefined;
 
     if (user?.location) {
       const locationData = user.location as {
@@ -46,19 +49,21 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       locationName = locationData?.name;
     }
 
-    if (!lat || !lon) {
-      return res.status(400).json({ error: 'User location is missing' });
+    if (lat && lon) {
+      const openWeatherApiKey = process.env.OPENWEATHER_API_KEY;
+      const weatherResponse = await axios.get(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherApiKey}&units=metric`
+      );
+
+      const weatherData = weatherResponse.data;
+      temperature = weatherData.main.temp;
+      weatherDescription = weatherData.weather[0].description;
+      windSpeed = weatherData.wind.speed;
+    } else {
+      weatherDescription = 'unknown weather';
+      temperature = 'unknown temperature';
+      windSpeed = 'unknown wind speed';
     }
-
-    const openWeatherApiKey = process.env.OPENWEATHER_API_KEY;
-    const weatherResponse = await axios.get(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${openWeatherApiKey}&units=metric`
-    );
-
-    const weatherData = weatherResponse.data;
-    const temperature = weatherData.main.temp;
-    const weatherDescription = weatherData.weather[0].description;
-    const windSpeed = weatherData.wind.speed;
 
     const saveUserMessageResult = await sendMessage(
       userId,
@@ -99,7 +104,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       You are a virtual stylist assistant named Ali.
       Always suggest clothes from the user's closet first, and if there aren't enough, suggest generic items based on the weather.
       - User Details: ${user?.first_name} ${user?.last_name}
-      - Location: ${locationName}
+      - Location: ${locationName || 'unknown'}
       - Skin Tone: ${user?.skin_tone_classification}
       - Clothing Colors That Complement: ${user?.skin_tone_complements}
       - Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
