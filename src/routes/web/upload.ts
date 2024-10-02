@@ -53,7 +53,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     formData.append('image_url', downloadURL);
 
     const backgroundRemovalResponse = await axios.post(
-      'http://localhost:4269/remove-background/',
+      `${process.env.RENDER_ML_SERVER_API}/remove-background/`,
       formData,
       {
         headers: {
@@ -122,7 +122,7 @@ router.post('/analyze-skin-tone', upload.single('file'), async (req, res) => {
     formData.append('image_url', downloadURL);
 
     const analyzeResponse = await axios.post(
-      'http://localhost:4269/analyze-skin-tone/',
+      `${process.env.RENDER_ML_SERVER_API}/analyze-skin-tone/`,
       formData,
       {
         headers: {
