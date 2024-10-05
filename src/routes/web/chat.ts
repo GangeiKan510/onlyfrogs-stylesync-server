@@ -101,13 +101,6 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       `;
     }
 
-    const clothingDetailsWithImages = userClothes
-      .map(
-        (clothing, index) =>
-          `${index + 1}. *${clothing.name}*:\n![${clothing.name}](${clothing.image_url})`
-      )
-      .join('\n');
-
     const systemMessageContent = `
       You are a virtual stylist assistant named Ali.
       Always suggest clothes from the user's closet first. If there are any missing items, combine them with generic suggestions based on the weather.
@@ -124,8 +117,6 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       - Season: ${user?.season}
       - Budget: ${user?.budget_min} - ${user?.budget_max}
       ${clothingMessage}
-      The user has the following clothing items with images:
-      ${clothingDetailsWithImages}
     `;
 
     const fullConversation = [
@@ -145,8 +136,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'No valid response from GPT' });
     }
 
-    const formattedResponse =
-      gptResponse + '\n\nOutfit visualization:\n' + clothingDetailsWithImages;
+    const formattedResponse = gptResponse;
 
     const saveAssistantMessageResult = await sendMessage(
       userId,
