@@ -88,10 +88,9 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 
     if (userClothes.length > 0) {
       clothingMessage = `
-        The user has ${userClothes.length} clothing item(s). 
-        Suggest an outfit using their closet items combined with generic suggestions for any missing items, based on the weather conditions: 
+        The user has ${userClothes.length} clothing item(s): ${userClothes.map((item) => item.name).join(', ')}. 
+        Suggest an outfit using their closet items, and only suggest generic options for missing essential items, considering the weather: 
         Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
-        List the clothing items the user currently has first.
       `;
     } else {
       clothingMessage = `
@@ -102,22 +101,22 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     }
 
     const systemMessageContent = `
-      You are a virtual stylist assistant named Ali.
-      Always suggest clothes from the user's closet first. If there are any missing items, combine them with generic suggestions based on the weather.
-      - User Details: ${user?.first_name} ${user?.last_name}
-      - Location: ${locationName || 'unknown'}
-      - Skin Tone: ${user?.skin_tone_classification}
-      - Clothing Colors That Complement: ${user?.skin_tone_complements}
-      - Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
-      - Height: ${user?.height} cm, Weight: ${user?.weight} kg
-      - Style preferences: ${user?.style_preferences.join(', ')}
-      - Favorite colors: ${user?.favorite_colors.join(', ')}
-      - Preferred brands: ${user?.preferred_brands.join(', ')}
-      - Body type: ${user?.body_type}
-      - Season: ${user?.season}
-      - Budget: ${user?.budget_min} - ${user?.budget_max}
-      ${clothingMessage}
-    `;
+    You are a virtual stylist assistant named Ali.
+    Always prioritize and suggest clothes from the user's closet before considering any other items. Only suggest items outside their closet if essential items are missing.
+    - User Details: ${user?.first_name} ${user?.last_name}
+    - Location: ${locationName || 'unknown'}
+    - Skin Tone: ${user?.skin_tone_classification}
+    - Clothing Colors That Complement: ${user?.skin_tone_complements}
+    - Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
+    - Height: ${user?.height} cm, Weight: ${user?.weight} kg
+    - Style preferences: ${user?.style_preferences.join(', ')}
+    - Favorite colors: ${user?.favorite_colors.join(', ')}
+    - Preferred brands: ${user?.preferred_brands.join(', ')}
+    - Body type: ${user?.body_type}
+    - Season: ${user?.season}
+    - Budget: ${user?.budget_min} - ${user?.budget_max}
+    ${clothingMessage}
+  `;
 
     const fullConversation = [
       { role: 'system', content: systemMessageContent },
