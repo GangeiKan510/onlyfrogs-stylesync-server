@@ -84,6 +84,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 
     const userClothes = user?.clothes || [];
     const enoughClothes = userClothes.length >= 3;
+    const hasSomeClothes = userClothes.length > 0;
 
     let clothingMessage = '';
 
@@ -92,6 +93,13 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         The user has enough clothing items, suggest an outfit using their closet. 
         Make sure the items fit well together based on style preferences and weather.
       `;
+    } else if (hasSomeClothes) {
+      clothingMessage = `
+        The user has only ${userClothes.length} clothing item(s). 
+        Please suggest complementary items that can be added to their wardrobe based on the current weather conditions: 
+        Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
+        List the clothing items the user currently has first.
+      `;
     } else {
       clothingMessage = `
         The user does not have enough clothes in their closet or it's empty. 
@@ -99,6 +107,16 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
       `;
     }
+
+    const clothingDetails = hasSomeClothes
+      ? userClothes
+          .map(
+            (clothing) => `
+          - ${clothing.name} (image: ${clothing.image_url})
+        `
+          )
+          .join('\n')
+      : 'No clothes in the closet.';
 
     const systemMessageContent = `
       You are a virtual stylist assistant named Ali.
@@ -117,8 +135,9 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       - Budget: ${user?.budget_min} - ${user?.budget_max}
       ${clothingMessage}
       The user has the following clothing items:
-      ${userClothes.map((clothing) => clothing.name).join(', ')}
+      ${clothingDetails}
     `;
+
     const fullConversation = [
       { role: 'system', content: systemMessageContent },
       ...previousMessages,
