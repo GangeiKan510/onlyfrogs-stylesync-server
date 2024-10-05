@@ -108,15 +108,12 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       `;
     }
 
-    const clothingDetails = hasSomeClothes
-      ? userClothes
-          .map(
-            (clothing) => `
-          - ${clothing.name} (image: ${clothing.image_url})
-        `
-          )
-          .join('\n')
-      : 'No clothes in the closet.';
+    const clothingDetailsWithImages = userClothes
+      .map(
+        (clothing, index) =>
+          `${index + 1}. *${clothing.name}*:\n![${clothing.name}](${clothing.image_url})`
+      )
+      .join('\n');
 
     const systemMessageContent = `
       You are a virtual stylist assistant named Ali.
@@ -134,8 +131,8 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       - Season: ${user?.season}
       - Budget: ${user?.budget_min} - ${user?.budget_max}
       ${clothingMessage}
-      The user has the following clothing items:
-      ${clothingDetails}
+      The user has the following clothing items with images:
+      ${clothingDetailsWithImages}
     `;
 
     const fullConversation = [
@@ -155,9 +152,12 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'No valid response from GPT' });
     }
 
+    const formattedResponse =
+      gptResponse + '\n\nOutfit visualization:\n' + clothingDetailsWithImages;
+
     const saveAssistantMessageResult = await sendMessage(
       userId,
-      gptResponse,
+      formattedResponse,
       'assistant'
     );
 
@@ -167,7 +167,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         .json(saveAssistantMessageResult);
     }
 
-    return res.status(200).json({ userId, message: gptResponse });
+    return res.status(200).json({ userId, message: formattedResponse });
   } catch (error) {
     console.error(
       'Error connecting to OpenAI or fetching weather data:',
