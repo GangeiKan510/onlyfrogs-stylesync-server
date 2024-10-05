@@ -83,27 +83,20 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       })) ?? [];
 
     const userClothes = user?.clothes || [];
-    const enoughClothes = userClothes.length >= 3;
-    const hasSomeClothes = userClothes.length > 0;
 
     let clothingMessage = '';
 
-    if (enoughClothes) {
+    if (userClothes.length > 0) {
       clothingMessage = `
-        The user has enough clothing items, suggest an outfit using their closet. 
-        Make sure the items fit well together based on style preferences and weather.
-      `;
-    } else if (hasSomeClothes) {
-      clothingMessage = `
-        The user has only ${userClothes.length} clothing item(s). 
-        Please suggest complementary items that can be added to their wardrobe based on the current weather conditions: 
+        The user has ${userClothes.length} clothing item(s). 
+        Suggest an outfit using their closet items combined with generic suggestions for any missing items, based on the weather conditions: 
         Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
         List the clothing items the user currently has first.
       `;
     } else {
       clothingMessage = `
-        The user does not have enough clothes in their closet or it's empty. 
-        Suggest generic items based on the current weather conditions: 
+        The user has no clothing items in their closet. 
+        Suggest a complete outfit based on the current weather conditions: 
         Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
       `;
     }
@@ -117,7 +110,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 
     const systemMessageContent = `
       You are a virtual stylist assistant named Ali.
-      Always suggest clothes from the user's closet first, and if there aren't enough, suggest generic items based on the weather.
+      Always suggest clothes from the user's closet first. If there are any missing items, combine them with generic suggestions based on the weather.
       - User Details: ${user?.first_name} ${user?.last_name}
       - Location: ${locationName || 'unknown'}
       - Skin Tone: ${user?.skin_tone_classification}
