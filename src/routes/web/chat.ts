@@ -88,7 +88,23 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 
     if (userClothes.length > 0) {
       clothingMessage = `
-        The user has ${userClothes.length} clothing item(s): ${userClothes.map((item) => item.name).join(', ')}. 
+        The user has ${userClothes.length} clothing item(s):
+        ${userClothes
+          .map(
+            (item) => `
+            - ${item.name}: 
+              - Name: ${item.name}
+              - Brand: ${item.brand}
+              - Category: ${item.category}
+              - Color: ${item.color}
+              - Occasion: ${item.occasion}
+              - Pattern: ${item.pattern}
+              - Season: ${item.season}
+              - Material: ${item.material}
+              - Image URL: ${item.image_url ? item.image_url : 'N/A'}
+          `
+          )
+          .join('\n')} 
         Suggest an outfit using their closet items, and only suggest generic options for missing essential items, considering the weather: 
         Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
       `;
@@ -116,6 +132,8 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     - Season: ${user?.season}
     - Budget: ${user?.budget_min} - ${user?.budget_max}
     ${clothingMessage}
+
+    Please provide the response in markdown format, including image URLs for the suggested outfits. Ensure that the outfits prioritize the user's closet items. Use markdown image tags for any outfit suggestions like this: ![Outfit](image_url). 
   `;
 
     const fullConversation = [
