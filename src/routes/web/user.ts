@@ -1,7 +1,13 @@
 import { Request, Response, Router } from 'express';
-import { createUser, getUserByEmail, updateUser } from '../../controllers/user';
+import {
+  createUser,
+  getUserByEmail,
+  updateUser,
+  updateName,
+} from '../../controllers/user';
 import {
   CreateUserSchema,
+  UpdateUserNameSchema,
   UpdateUserSchema,
 } from '../../validators/schemas/schemas';
 import { validate } from '../../validators/validate';
@@ -58,6 +64,33 @@ router.post(
       res.status(200).json(updatedUser);
     } catch (error) {
       console.error('Error updating user:', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-name',
+  validate(UpdateUserNameSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { id, first_name, last_name } = req.body;
+
+      if (!id || !first_name || !last_name) {
+        return res
+          .status(400)
+          .json({ error: 'User ID, first name, and last name are required' });
+      }
+
+      const updatedUser = await updateName(id, first_name, last_name);
+
+      if (updatedUser.status === 200) {
+        res.status(200).json(updatedUser);
+      } else {
+        res.status(updatedUser.status).json({ message: updatedUser.message });
+      }
+    } catch (error) {
+      console.error('Error updating user name:', error);
       next(error);
     }
   }
