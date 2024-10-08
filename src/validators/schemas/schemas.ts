@@ -7,6 +7,11 @@ export const CreateClothingRequestBodySchema = z.object({
   imageUrl: z.string().url({ message: 'Image URL must be a valid URL' }),
 });
 
+export const UpdateUserNameSchema = z.object({
+  id: z.string().nonempty({ message: 'User ID is required' }),
+  first_name: z.string().nonempty({ message: 'First name is required' }),
+  last_name: z.string().nonempty({ message: 'Last name is required' }),
+});
 export const UpdateClothingRequestBodySchema = z.object({
   id: z.string().nonempty({ message: 'Clothing ID is required' }),
 

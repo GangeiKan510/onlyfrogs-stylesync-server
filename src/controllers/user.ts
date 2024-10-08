@@ -154,3 +154,34 @@ export const updateUser = async (
     throw error;
   }
 };
+
+export const updateName = async (
+  userId: string,
+  firstName: string,
+  lastName: string
+) => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'User name updated successfully',
+      user: updatedUser,
+    };
+  } catch (error: any) {
+    console.error('Error updating user name:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
