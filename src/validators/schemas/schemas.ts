@@ -90,6 +90,40 @@ export const UpdateUserSchema = z.object({
     .optional(),
 });
 
+export const UpdatePersonalInformationSchema = z.object({
+  id: z.string().nonempty({ message: 'User ID is required' }),
+
+  birth_date: z
+    .string()
+    .optional()
+    .refine((date) => !isNaN(Date.parse(date as string)), {
+      message: 'Invalid date format, expected ISO format',
+    }),
+
+  gender: z
+    .string()
+    .optional()
+    .refine(
+      (value) =>
+        value === undefined ||
+        ['Male', 'Female', 'Other', 'Prefer not to say'].includes(value),
+      {
+        message:
+          'Gender must be one of: Male, Female, Other, Prefer not to say',
+      }
+    ),
+
+  height: z
+    .number()
+    .min(0, { message: 'Height must be a positive number' })
+    .optional(),
+
+  weight: z
+    .number()
+    .min(0, { message: 'Weight must be a positive number' })
+    .optional(),
+});
+
 export const ClosetSchema = z.object({
   name: z.string().nonempty({ message: 'Closet name is required' }),
   description: z.string().nonempty({ message: 'Description name is required' }),

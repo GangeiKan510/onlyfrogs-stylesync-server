@@ -185,3 +185,38 @@ export const updateName = async (
     };
   }
 };
+
+export const updatePersonalInformation = async (
+  userId: string,
+  birth_date: string,
+  gender: string,
+  height: number,
+  weight: number
+) => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        birth_date: birth_date ? new Date(birth_date) : undefined,
+        gender: gender,
+        height: height,
+        weight: weight,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Personal information updated successfully',
+      user: updatedUser,
+    };
+  } catch (error: any) {
+    console.error('Error updating personal information:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
