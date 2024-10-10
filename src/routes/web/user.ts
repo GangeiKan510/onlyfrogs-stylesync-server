@@ -4,9 +4,11 @@ import {
   getUserByEmail,
   updateUser,
   updateName,
+  updatePersonalInformation,
 } from '../../controllers/user';
 import {
   CreateUserSchema,
+  UpdatePersonalInformationSchema,
   UpdateUserNameSchema,
   UpdateUserSchema,
 } from '../../validators/schemas/schemas';
@@ -91,6 +93,29 @@ router.post(
       }
     } catch (error) {
       console.error('Error updating user name:', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-personal-information',
+  validate(UpdatePersonalInformationSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { id, birth_date, gender, height, weight } = req.body;
+
+      const updatedUser = await updatePersonalInformation(
+        id,
+        birth_date,
+        gender,
+        height,
+        weight
+      );
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      console.error('Error updating personal information:', error);
       next(error);
     }
   }
