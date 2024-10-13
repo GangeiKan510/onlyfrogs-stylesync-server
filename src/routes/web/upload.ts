@@ -92,6 +92,146 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+router.post('/image_url', async (req, res) => {
+  try {
+    const { image_url, user_id, closet_id, category, tags } = req.body;
+
+    if (!image_url || !user_id || !closet_id) {
+      return res
+        .status(400)
+        .json({ error: 'image_url, user_id, and closet_id are required.' });
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('image_url', image_url);
+
+    const backgroundRemovalResponse = await axios.post(
+      `${process.env.RENDER_ML_SERVER_API}/remove-background/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    const processedImageUrl = backgroundRemovalResponse.data.file_url;
+
+    const dateTime = giveCurrentDateTime();
+    const storageRef = ref(storage, `files/${processedImageUrl}_${dateTime}`);
+
+    const response = await axios.get(processedImageUrl, {
+      responseType: 'arraybuffer',
+    });
+
+    const metadata = {
+      contentType: 'image/jpeg',
+    };
+
+    const snapshot = await uploadBytesResumable(
+      storageRef,
+      Buffer.from(response.data, 'binary'),
+      metadata
+    );
+
+    const firebaseUrl = await getDownloadURL(snapshot.ref);
+
+    const clothingData = {
+      image_url: firebaseUrl,
+      category: category || 'default-category',
+      tags: tags ? tags.split(',') : [],
+      user_id,
+      closet_id,
+    };
+
+    const clothingItem = await createClothing(clothingData);
+
+    return res.send({
+      message:
+        'Image processed, background removed, uploaded to Firebase, and clothing item created',
+      originalImageUrl: image_url,
+      processedImageUrl: firebaseUrl,
+      clothingItem,
+    });
+  } catch (error: any) {
+    console.error(
+      'Error during image processing, background removal, or clothing creation:',
+      error.message
+    );
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.post('/upload-image_url', async (req, res) => {
+  try {
+    const { image_url, user_id, closet_id, category, tags } = req.body;
+
+    if (!image_url || !user_id || !closet_id) {
+      return res
+        .status(400)
+        .json({ error: 'image_url, user_id, and closet_id are required.' });
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('image_url', image_url);
+
+    const backgroundRemovalResponse = await axios.post(
+      `${process.env.RENDER_ML_SERVER_API}/remove-background/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    const processedImageUrl = backgroundRemovalResponse.data.file_url;
+
+    const dateTime = giveCurrentDateTime();
+    const storageRef = ref(storage, `files/${processedImageUrl}_${dateTime}`);
+
+    const response = await axios.get(processedImageUrl, {
+      responseType: 'arraybuffer',
+    });
+
+    const metadata = {
+      contentType: 'image/jpeg',
+    };
+
+    const snapshot = await uploadBytesResumable(
+      storageRef,
+      Buffer.from(response.data, 'binary'),
+      metadata
+    );
+
+    const firebaseUrl = await getDownloadURL(snapshot.ref);
+
+    const clothingData = {
+      image_url: firebaseUrl,
+      category: category || 'default-category',
+      tags: tags ? tags.split(',') : [],
+      user_id,
+      closet_id,
+    };
+
+    const clothingItem = await createClothing(clothingData);
+
+    return res.send({
+      message:
+        'Image processed, background removed, uploaded to Firebase, and clothing item created',
+      originalImageUrl: image_url,
+      processedImageUrl: firebaseUrl,
+      clothingItem,
+    });
+  } catch (error: any) {
+    console.error(
+      'Error during image processing, background removal, or clothing creation:',
+      error.message
+    );
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 router.post('/analyze-skin-tone', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
