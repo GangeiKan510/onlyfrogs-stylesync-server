@@ -162,7 +162,7 @@ router.post('/image_url', async (req, res) => {
   }
 });
 
-router.post('/upload-image_url', async (req, res) => {
+router.post('/upload-image-url', async (req, res) => {
   try {
     const { image_url, user_id, closet_id, category, tags } = req.body;
 
