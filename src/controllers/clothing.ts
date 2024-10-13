@@ -51,3 +51,18 @@ export const updateClothing = async (
     throw error;
   }
 };
+
+export const deleteClothing = async (clothingId: string) => {
+  try {
+    const deletedClothing = await prisma.clothing.delete({
+      where: {
+        id: clothingId,
+      },
+    });
+
+    return deletedClothing;
+  } catch (error) {
+    console.error('Error deleting clothing:', error);
+    throw error;
+  }
+};

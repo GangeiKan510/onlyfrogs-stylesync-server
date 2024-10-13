@@ -4,7 +4,11 @@ import {
   CreateClothingRequestBodySchema,
   UpdateClothingRequestBodySchema,
 } from '../../validators/schemas/schemas';
-import { createClothing, updateClothing } from '../../controllers/clothing';
+import {
+  createClothing,
+  deleteClothing,
+  updateClothing,
+} from '../../controllers/clothing';
 
 const router = Router();
 
@@ -61,6 +65,30 @@ router.post(
     }
   }
 );
+
+router.delete('/delete-clothing', async (req: Request, res: Response) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Clothing ID is required.' });
+  }
+
+  try {
+    const deletedClothing = await deleteClothing(id);
+
+    if (!deletedClothing) {
+      return res.status(404).json({ error: 'Clothing item not found' });
+    }
+
+    res.status(200).json({
+      message: 'Clothing item deleted successfully',
+      deletedClothing,
+    });
+  } catch (error: any) {
+    console.error('Error deleting clothing:', error.message);
+    res.status(500).json({ error: 'Failed to delete clothing item' });
+  }
+});
 
 router.get('/', (req: Request, res: Response) => {
   res.send('Web file router');
