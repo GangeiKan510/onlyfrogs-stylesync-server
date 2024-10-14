@@ -30,6 +30,7 @@ model User {
   budget_min               Int?
   budget_max               Int?
   location                 Json?
+  profile_url              String?
 
   clothes Clothing[]
   closets Closet[]
