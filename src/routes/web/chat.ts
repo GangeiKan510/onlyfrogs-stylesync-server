@@ -13,7 +13,6 @@ const router = Router();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
 router.post('/prompt-gpt', async (req: Request, res: Response) => {
   const { userId, userMessage } = req.body;
 
@@ -88,53 +87,68 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 
     if (userClothes.length > 0) {
       clothingMessage = `
-        The user has ${userClothes.length} clothing item(s):
-        ${userClothes
-          .map(
-            (item) => `
-            - ${item.name}: 
-              - Name: ${item.name}
-              - Brand: ${item.brand}
-              - Category: ${item.category}
-              - Color: ${item.color}
-              - Occasion: ${item.occasion}
-              - Pattern: ${item.pattern}
-              - Season: ${item.season}
-              - Material: ${item.material}
-              - Image URL: ${item.image_url ? item.image_url : 'N/A'}
-          `
-          )
-          .join('\n')} 
-        Suggest an outfit using their closet items, and only suggest generic options for missing essential items, considering the weather: 
-        Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
-      `;
+The user has the following clothing items in their closet:
+${userClothes
+  .map(
+    (item) => `
+- **${item.name}**:
+  - Brand: ${item.brand}
+  - Category: ${item.category}
+  - Color: ${item.color}
+  - Occasion: ${item.occasion}
+  - Pattern: ${item.pattern}
+  - Season: ${item.season}
+  - Material: ${item.material}
+  - Image URL: ${item.image_url ? item.image_url : 'N/A'}
+`
+  )
+  .join('\n')} 
+Please prioritize these items when suggesting outfits. If essential items are missing, feel free to suggest generic options to pair with them. Ensure that all chosen clothing from the closet includes its images using markdown image syntax like \`![Item Name](image_url)\`.
+`;
     } else {
       clothingMessage = `
-        The user has no clothing items in their closet. 
-        Suggest a complete outfit based on the current weather conditions: 
-        Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s.
-      `;
+The user has no clothing items in their closet.
+Please suggest a complete outfit based on the current weather conditions:
+- Weather: ${weatherDescription}
+- Temperature: ${temperature}°C
+- Wind Speed: ${windSpeed} m/s.
+Include generic items suitable for these conditions.
+`;
     }
 
     const systemMessageContent = `
-    You are a virtual stylist assistant named Ali.
-    Always prioritize and suggest clothes from the user's closet before considering any other items. Only suggest items outside their closet if essential items are missing.
-    - User Details: ${user?.first_name} ${user?.last_name}
-    - Location: ${locationName || 'unknown'}
-    - Skin Tone: ${user?.skin_tone_classification}
-    - Clothing Colors That Complement: ${user?.skin_tone_complements}
-    - Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
-    - Height: ${user?.height} cm, Weight: ${user?.weight} kg
-    - Style preferences: ${user?.style_preferences.join(', ')}
-    - Favorite colors: ${user?.favorite_colors.join(', ')}
-    - Preferred brands: ${user?.preferred_brands.join(', ')}
-    - Body type: ${user?.body_type}
-    - Season: ${user?.season}
-    - Budget: ${user?.budget_min} - ${user?.budget_max}
-    ${clothingMessage}
+You are a virtual stylist assistant named Ali.
+Your primary goal is to create outfit suggestions for the user.
 
-    Please provide the response in markdown format, including image URLs for the suggested outfits. Ensure that the outfits prioritize the user's closet items. Use markdown image tags for any outfit suggestions like this: ![Outfit](image_url). 
-  `;
+**Instructions:**
+- Always prioritize and suggest clothes from the user's closet before considering any other items.
+- If the closet items are not enough to form a complete outfit, suggest generic items to pair with them.
+- Ensure that all chosen clothing from the closet includes its images using markdown image syntax: \`![Item Name](image_url)\`.
+- When suggesting generic items, do not include images.
+
+**User Details:**
+- Name: ${user?.first_name} ${user?.last_name}
+- Location: ${locationName || 'unknown'}
+- Skin Tone: ${user?.skin_tone_classification}
+- Clothing Colors That Complement: ${user?.skin_tone_complements}
+- Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
+- Height: ${user?.height} cm
+- Weight: ${user?.weight} kg
+- Style Preferences: ${user?.style_preferences.join(', ')}
+- Favorite Colors: ${user?.favorite_colors.join(', ')}
+- Preferred Brands: ${user?.preferred_brands.join(', ')}
+- Body Type: ${user?.body_type}
+- Season: ${user?.season}
+- Budget: ${user?.budget_min} - ${user?.budget_max}
+
+${clothingMessage}
+
+**Output Format:**
+- Provide the response in markdown format.
+- Include image URLs for the user's closet items using markdown image tags.
+- For each outfit suggestion, list the items with bullet points.
+- Use headings (e.g., \`## Outfit Suggestion\`) to structure the response.
+`;
 
     const fullConversation = [
       { role: 'system', content: systemMessageContent },
