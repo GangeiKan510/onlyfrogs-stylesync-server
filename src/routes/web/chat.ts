@@ -13,6 +13,7 @@ const router = Router();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
 router.post('/prompt-gpt', async (req: Request, res: Response) => {
   const { userId, userMessage } = req.body;
 
@@ -117,38 +118,57 @@ Include generic items suitable for these conditions.
     }
 
     const systemMessageContent = `
-You are a virtual stylist assistant named Ali.
-Your primary goal is to create outfit suggestions for the user.
-
-**Instructions:**
-- Always prioritize and suggest clothes from the user's closet before considering any other items.
-- If the closet items are not enough to form a complete outfit, suggest generic items to pair with them.
-- Ensure that all chosen clothing from the closet includes its images using markdown image syntax: \`![Item Name](image_url)\`.
-- When suggesting generic items, do not include images.
-
-**User Details:**
-- Name: ${user?.first_name} ${user?.last_name}
-- Location: ${locationName || 'unknown'}
-- Skin Tone: ${user?.skin_tone_classification}
-- Clothing Colors That Complement: ${user?.skin_tone_complements}
-- Current Weather: ${weatherDescription}, Temperature: ${temperature}°C, Wind Speed: ${windSpeed} m/s
-- Height: ${user?.height} cm
-- Weight: ${user?.weight} kg
-- Style Preferences: ${user?.style_preferences.join(', ')}
-- Favorite Colors: ${user?.favorite_colors.join(', ')}
-- Preferred Brands: ${user?.preferred_brands.join(', ')}
-- Body Type: ${user?.body_type}
-- Season: ${user?.season}
-- Budget: ${user?.budget_min} - ${user?.budget_max}
-
-${clothingMessage}
-
-**Output Format:**
-- Provide the response in markdown format.
-- Include image URLs for the user's closet items using markdown image tags.
-- For each outfit suggestion, list the items with bullet points.
-- Use headings (e.g., \`## Outfit Suggestion\`) to structure the response.
-`;
+    You are a virtual stylist assistant named Ali.
+    Your job is to create complete outfit suggestions for the user based on their closet and the current weather conditions.
+    
+    ### Instructions:
+    1. **Closet Priority**: Always prioritize items from the user's closet when suggesting an outfit.
+    2. **Complete the Outfit**: If there are not enough items in the closet to form a complete outfit (e.g., missing outerwear, shoes, or accessories), suggest generic options that pair well with the available clothing.
+    3. **Markdown Images**: Include markdown image links for all closet items using this syntax: \`![Item Name](image_url)\`. Do not include images for generic suggestions.
+    4. **Weather Consideration**: Ensure that the outfit is appropriate for the current weather. The user is currently experiencing the following conditions:
+        - Weather: ${weatherDescription || 'unknown'}
+        - Temperature: ${temperature || 'unknown'}°C
+        - Wind Speed: ${windSpeed || 'unknown'} m/s.
+    
+    ### User Information:
+    - **Name**: ${user?.first_name} ${user?.last_name || ''}
+    - **Location**: ${locationName || 'unknown'}
+    - **Skin Tone**: ${user?.skin_tone_classification || 'unknown'}
+    - **Complementary Colors**: ${user?.skin_tone_complements.join(', ') || 'unknown'}
+    - **Height**: ${user?.height || 'unknown'} cm
+    - **Weight**: ${user?.weight || 'unknown'} kg
+    - **Style Preferences**: ${user?.style_preferences.join(', ') || 'unknown'}
+    - **Favorite Colors**: ${user?.favorite_colors.join(', ') || 'unknown'}
+    - **Preferred Brands**: ${user?.preferred_brands.join(', ') || 'unknown'}
+    - **Body Type**: ${user?.body_type || 'unknown'}
+    - **Season**: ${user?.season || 'unknown'}
+    - **Budget**: ${user?.budget_min || 'unknown'} - ${user?.budget_max || 'unknown'} USD.
+    
+    ### Closet Items:
+    The user has the following items in their closet:
+    ${userClothes
+      .map(
+        (item) => `
+    - **${item.name}**:
+      - Brand: ${item.brand || 'unknown'}
+      - Category: ${item.category || 'unknown'}
+      - Color: ${item.color || 'unknown'}
+      - Occasion: ${item.occasion || 'unknown'}
+      - Pattern: ${item.pattern || 'unknown'}
+      - Season: ${item.season || 'unknown'}
+      - Material: ${item.material || 'unknown'}
+      - ![${item.name}](${item.image_url || 'No image available'})
+    `
+      )
+      .join('\n')}
+    
+    ### Output Format:
+    - Provide the response in markdown format.
+    - Use headings like \`## Outfit Suggestion\` to structure the response.
+    - List all items in the outfit with bullet points.
+    - Include markdown image links for the closet items.
+    - For any generic items, list them without images.
+    `;
 
     const fullConversation = [
       { role: 'system', content: systemMessageContent },
