@@ -179,7 +179,7 @@ Include generic items suitable for these conditions.
     ];
 
     const openaiResponse = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4-turbo',
       messages: fullConversation,
     });
 
