@@ -90,6 +90,11 @@ export const UpdateUserSchema = z.object({
     .optional(),
 });
 
+export const UpdateUserBodyType = z.object({
+  id: z.string().nonempty({ message: 'User ID is required' }),
+  body_type: z.string().nonempty({ message: 'Body type is required' }),
+});
+
 export const UpdatePersonalInformationSchema = z.object({
   id: z.string().nonempty({ message: 'User ID is required' }),
 

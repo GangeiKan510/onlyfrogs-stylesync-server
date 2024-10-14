@@ -5,10 +5,12 @@ import {
   updateUser,
   updateName,
   updatePersonalInformation,
+  updateBodyType,
 } from '../../controllers/user';
 import {
   CreateUserSchema,
   UpdatePersonalInformationSchema,
+  UpdateUserBodyType,
   UpdateUserNameSchema,
   UpdateUserSchema,
 } from '../../validators/schemas/schemas';
@@ -114,6 +116,23 @@ router.post(
       );
 
       res.status(200).json(updatedUser);
+    } catch (error) {
+      console.error('Error updating personal information:', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-body-type',
+  validate(UpdateUserBodyType),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { id, body_type } = req.body;
+
+      const updatedUserBodyType = await updateBodyType(id, body_type);
+
+      res.status(200).json(updatedUserBodyType);
     } catch (error) {
       console.error('Error updating personal information:', error);
       next(error);
