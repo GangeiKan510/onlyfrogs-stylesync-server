@@ -220,3 +220,29 @@ export const updatePersonalInformation = async (
     };
   }
 };
+
+export const updateBodyType = async (userId: string, body_type: string) => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        body_type: body_type,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Body type updated successfully',
+      user: updatedUser,
+    };
+  } catch (error: any) {
+    console.error('Error updating body type:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
