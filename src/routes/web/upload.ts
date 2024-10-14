@@ -10,6 +10,7 @@ import multer from 'multer';
 import axios from 'axios';
 import firebaseConfig from '../../config/firebase.config';
 import { createClothing } from '../../controllers/clothing';
+import { updateProfileUrl } from '../../controllers/user';
 
 const router: Router = express.Router();
 
@@ -213,6 +214,61 @@ router.post('/analyze-skin-tone', upload.single('file'), async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+router.post(
+  '/upload-profile-picture',
+  upload.single('file'),
+  async (req, res) => {
+    try {
+      if (!req.file || !req.body.user_id) {
+        return res
+          .status(400)
+          .json({ error: 'File and user_id are required.' });
+      }
+
+      const { user_id } = req.body;
+
+      const dateTime = giveCurrentDateTime();
+      const storageRef = ref(
+        storage,
+        `profile_pics/${req.file.originalname}_${dateTime}`
+      );
+
+      const metadata = {
+        contentType: req.file.mimetype,
+      };
+
+      const snapshot = await uploadBytesResumable(
+        storageRef,
+        req.file.buffer,
+        metadata
+      );
+
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      console.log('File successfully uploaded to Firebase Storage.');
+
+      const result = await updateProfileUrl(user_id, downloadURL);
+
+      if (result.status === 200) {
+        return res.status(200).json({
+          message:
+            'Profile picture uploaded and profile URL updated successfully.',
+          profileUrl: downloadURL,
+          user: result.user,
+        });
+      } else {
+        return res.status(result.status).json({ message: result.message });
+      }
+    } catch (error: any) {
+      console.error(
+        'Error during file upload or updating profile URL:',
+        error.message
+      );
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+);
 
 const giveCurrentDateTime = () => {
   const today = new Date();

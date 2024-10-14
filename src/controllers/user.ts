@@ -246,3 +246,29 @@ export const updateBodyType = async (userId: string, body_type: string) => {
     };
   }
 };
+
+export const updateProfileUrl = async (userId: string, profileUrl: string) => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        profile_url: profileUrl,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Profile URL updated successfully',
+      user: updatedUser,
+    };
+  } catch (error: any) {
+    console.error('Error updating profile URL:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
