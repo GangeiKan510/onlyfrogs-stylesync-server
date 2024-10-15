@@ -71,7 +71,7 @@ model Worn {
   last_worn   DateTime?
   count       Int       @default(0)
   clothing_id String
-  clothing    Clothing  @relation(fields: [clothing_id], references: [id])
+  clothing    Clothing  @relation(fields: [clothing_id], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
