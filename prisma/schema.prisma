@@ -69,6 +69,7 @@ model Clothing {
 model Worn {
   id          String    @id @unique @default(uuid())
   last_worn   DateTime?
+  count       Int       @default(0)
   clothing_id String
   clothing    Clothing  @relation(fields: [clothing_id], references: [id])
 
