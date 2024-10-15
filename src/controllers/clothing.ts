@@ -74,3 +74,38 @@ export const deleteClothing = async (clothingId: string) => {
     throw error;
   }
 };
+
+export const updateWornDate = async (clothingId: string) => {
+  try {
+    let wornRecord = await prisma.worn.findFirst({
+      where: {
+        clothing_id: clothingId,
+      },
+    });
+
+    if (!wornRecord) {
+      wornRecord = await prisma.worn.create({
+        data: {
+          clothing: {
+            connect: { id: clothingId },
+          },
+          last_worn: new Date(),
+        },
+      });
+    } else {
+      wornRecord = await prisma.worn.update({
+        where: {
+          id: wornRecord.id,
+        },
+        data: {
+          last_worn: new Date(),
+        },
+      });
+    }
+
+    return wornRecord;
+  } catch (error) {
+    console.error('Error updating worn date:', error);
+    throw error;
+  }
+};

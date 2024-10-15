@@ -12,6 +12,7 @@ export const UpdateUserNameSchema = z.object({
   first_name: z.string().nonempty({ message: 'First name is required' }),
   last_name: z.string().nonempty({ message: 'Last name is required' }),
 });
+
 export const UpdateClothingRequestBodySchema = z.object({
   id: z.string().nonempty({ message: 'Clothing ID is required' }),
 
@@ -36,6 +37,10 @@ export const UpdateClothingRequestBodySchema = z.object({
   material: z.string().optional(),
   pattern: z.string().optional(),
   brand: z.string().optional(),
+});
+
+export const UpdateWornDateSchema = z.object({
+  clothing_id: z.string().nonempty({ message: 'Clothing ID is required' }),
 });
 
 export const CreateUserSchema = z.object({

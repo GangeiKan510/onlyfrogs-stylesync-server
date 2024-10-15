@@ -3,11 +3,13 @@ import { validate } from '../../validators/validate';
 import {
   CreateClothingRequestBodySchema,
   UpdateClothingRequestBodySchema,
+  UpdateWornDateSchema,
 } from '../../validators/schemas/schemas';
 import {
   createClothing,
   deleteClothing,
   updateClothing,
+  updateWornDate,
 } from '../../controllers/clothing';
 
 const router = Router();
@@ -89,6 +91,36 @@ router.delete('/delete-clothing', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete clothing item' });
   }
 });
+
+router.post(
+  '/update-worn-date',
+  validate(UpdateWornDateSchema),
+  async (req: Request, res: Response) => {
+    const { clothing_id } = req.body;
+
+    if (!clothing_id) {
+      return res.status(400).json({ error: 'Clothing ID is required.' });
+    }
+
+    try {
+      const updatedWorn = await updateWornDate(clothing_id);
+
+      if (!updatedWorn) {
+        return res
+          .status(404)
+          .json({ error: 'No worn record found for the given clothing item.' });
+      }
+
+      res.status(200).json({
+        message: 'Worn date updated successfully.',
+        updatedWorn,
+      });
+    } catch (error: any) {
+      console.error('Error updating worn date:', error.message);
+      res.status(500).json({ error: 'Failed to update worn date' });
+    }
+  }
+);
 
 router.get('/', (req: Request, res: Response) => {
   res.send('Web file router');
