@@ -11,7 +11,11 @@ export const getUserByEmail = async (email: string) => {
       },
       include: {
         closets: true,
-        clothes: true,
+        clothes: {
+          include: {
+            worn: true,
+          },
+        },
       },
     });
 
