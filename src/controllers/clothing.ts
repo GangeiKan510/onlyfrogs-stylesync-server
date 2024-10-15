@@ -10,6 +10,14 @@ export const createClothing = async (body: ClothingProps) => {
         tags: body.tags,
         user_id: body.user_id,
         closet_id: body.closet_id,
+        worn: {
+          create: {
+            last_worn: null,
+          },
+        },
+      },
+      include: {
+        worn: true,
       },
     });
 
