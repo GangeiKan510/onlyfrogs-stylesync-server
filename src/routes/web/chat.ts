@@ -222,6 +222,55 @@ router.post('/retrieve-user-sessions', async (req: Request, res: Response) => {
   return res.status(result.status).json(result);
 });
 
+router.post(
+  '/generate-prompt-suggestions',
+  async (req: Request, res: Response) => {
+    const { userMessage } = req.body;
+
+    if (!userMessage) {
+      return res.status(400).json({ error: 'User message is required' });
+    }
+
+    try {
+      const promptInstruction = `
+      Based on the user's message: "${userMessage}", generate three creative and relevant prompt suggestions for interacting with a virtual assistant. 
+      Each suggestion should be clear, concise, and engaging.
+    `;
+
+      const openaiResponse = await openai.chat.completions.create({
+        model: 'gpt-4-turbo',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a helpful assistant for generating creative prompt suggestions.',
+          },
+          { role: 'user', content: promptInstruction },
+        ],
+      });
+
+      const gptResponse = openaiResponse.choices[0]?.message?.content || null;
+
+      if (!gptResponse) {
+        return res.status(500).json({ error: 'No valid response from GPT' });
+      }
+
+      const promptSuggestions = gptResponse
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .slice(0, 3);
+
+      return res.status(200).json({ suggestions: promptSuggestions });
+    } catch (error) {
+      console.error('Error generating prompt suggestions:', error);
+      return res
+        .status(500)
+        .json({ error: 'Error generating prompt suggestions' });
+    }
+  }
+);
+
 router.delete(
   '/delete-chat-session-messages',
   async (req: Request, res: Response) => {
