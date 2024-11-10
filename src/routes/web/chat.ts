@@ -233,8 +233,9 @@ router.post(
 
     try {
       const promptInstruction = `
-      Based on the user's message: "${userMessage}", generate three concise and relevant prompt suggestions for fashion and outfit assistance. 
-      Ensure each suggestion is one sentence, engaging, and free of bullets, numbering, or markdown rendering.
+      Based on the user's message: "${userMessage}", generate three engaging and helpful suggestions for what the user could ask a virtual stylist assistant. 
+      Suggestions should focus on helping the user interact with the assistant for fashion and outfit advice. 
+      Ensure that each suggestion is a single sentence, directly encourages user interaction, and avoids numbering or markdown.
     `;
 
       const openaiResponse = await openai.chat.completions.create({
@@ -243,7 +244,7 @@ router.post(
           {
             role: 'system',
             content:
-              'You are a virtual stylist assistant specializing in generating creative and concise fashion-related suggestions.',
+              'You are a virtual stylist assistant helping generate engaging suggestions for user interactions about fashion and outfits.',
           },
           { role: 'user', content: promptInstruction },
         ],
@@ -258,9 +259,8 @@ router.post(
       // Format the response
       const promptSuggestions = gptResponse
         .split('\n')
-        .map((line) => line.replace(/^\d+\.\s*/, '').trim()) // Remove numbering
-        .filter((line) => line.length > 0 && !line.startsWith('*')) // Remove empty or markdown lines
-        .map((line) => line.replace(/\*\*/g, '')) // Remove markdown
+        .map((line) => line.trim().replace(/^\d+\.\s*/, '')) // Remove numbering
+        .filter((line) => line.length > 0 && !line.startsWith('*')) // Filter empty or irrelevant lines
         .slice(0, 3); // Limit to three suggestions
 
       return res.status(200).json({ suggestions: promptSuggestions });
