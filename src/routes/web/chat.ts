@@ -233,12 +233,8 @@ router.post(
 
     try {
       const promptInstruction = `
-      Based on the user's message: "${userMessage}", generate three creative and helpful prompt suggestions related to fashion and outfit choices. 
-      Consider the following:
-      - If the user mentioned weather, suggest outfits suitable for the conditions.
-      - If the user mentioned colors or styles, suggest combinations or trends they might like.
-      - Offer suggestions for seasonal wardrobe updates or specific occasions.
-      Ensure that each suggestion is concise, engaging, and provides value to the user.
+      Based on the user's message: "${userMessage}", generate three concise and relevant prompt suggestions for fashion and outfit assistance. 
+      Ensure each suggestion is one sentence, engaging, and free of bullets, numbering, or markdown rendering.
     `;
 
       const openaiResponse = await openai.chat.completions.create({
@@ -247,7 +243,7 @@ router.post(
           {
             role: 'system',
             content:
-              'You are a virtual stylist assistant specializing in fashion and outfit recommendations.',
+              'You are a virtual stylist assistant specializing in generating creative and concise fashion-related suggestions.',
           },
           { role: 'user', content: promptInstruction },
         ],
@@ -259,11 +255,12 @@ router.post(
         return res.status(500).json({ error: 'No valid response from GPT' });
       }
 
-      // Split and clean the response into individual suggestions
+      // Format the response
       const promptSuggestions = gptResponse
         .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0)
+        .map((line) => line.replace(/^\d+\.\s*/, '').trim()) // Remove numbering
+        .filter((line) => line.length > 0 && !line.startsWith('*')) // Remove empty or markdown lines
+        .map((line) => line.replace(/\*\*/g, '')) // Remove markdown
         .slice(0, 3); // Limit to three suggestions
 
       return res.status(200).json({ suggestions: promptSuggestions });
