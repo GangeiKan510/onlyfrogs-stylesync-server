@@ -234,8 +234,8 @@ router.post(
     try {
       const promptInstruction = `
       Based on the user's message: "${userMessage}", generate three engaging and helpful suggestions for what the user could ask a virtual stylist assistant. 
-      Suggestions should focus on helping the user interact with the assistant for fashion and outfit advice. 
-      Ensure that each suggestion is a single sentence, directly encourages user interaction, and avoids numbering or markdown.
+      Each suggestion should directly state a possible user query in one sentence, without additional phrasing like "How about asking" or "Why not inquire." 
+      Ensure the suggestions are clear, relevant to fashion and styling, and encourage interaction with the assistant.
     `;
 
       const openaiResponse = await openai.chat.completions.create({
@@ -260,7 +260,15 @@ router.post(
       const promptSuggestions = gptResponse
         .split('\n')
         .map((line) => line.trim().replace(/^\d+\.\s*/, '')) // Remove numbering
-        .filter((line) => line.length > 0 && !line.startsWith('*')) // Filter empty or irrelevant lines
+        .filter((line) => line.length > 0 && !line.startsWith('*')) // Remove irrelevant lines
+        .map((line) =>
+          line
+            .replace(
+              /^How about asking,|^Why not inquire,|^Feel free to ask,/,
+              ''
+            )
+            .trim()
+        ) // Remove leading phrases
         .slice(0, 3); // Limit to three suggestions
 
       return res.status(200).json({ suggestions: promptSuggestions });
