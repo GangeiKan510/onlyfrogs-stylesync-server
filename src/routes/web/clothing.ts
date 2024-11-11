@@ -11,8 +11,13 @@ import {
   updateClothing,
   updateWornDate,
 } from '../../controllers/clothing';
+import OpenAI from 'openai';
 
 const router = Router();
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 router.get('/get-clothes', (req, res) => {
   res.send("You're trying to get clothes!");
@@ -89,6 +94,95 @@ router.delete('/delete-clothing', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error deleting clothing:', error.message);
     res.status(500).json({ error: 'Failed to delete clothing item' });
+  }
+});
+
+router.post('/analyze-item', async (req: Request, res: Response) => {
+  const { imageUrl } = req.body;
+
+  if (!imageUrl) {
+    return res.status(400).json({ error: 'Image URL is required' });
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `
+              Analyze the provided image and determine if it contains clothing or accessories. 
+              If it does, return a structured list of tags for each identified item, with separate categories for clothing and accessories.
+
+              For clothing, provide:
+              - Type (e.g., shirt, pants, jacket).
+              - Material (e.g., cotton, denim).
+              - Color(s).
+              - Pattern (e.g., striped, plain, floral).
+              - Occasion (e.g., casual, formal, sports).
+              - Season (e.g., summer, winter, all-season).
+
+              For accessories, provide:
+              - Type (e.g., watch, necklace, handbag).
+              - Material (e.g., leather, metal).
+              - Color(s).
+              - Purpose (e.g., fashion, utility, both).
+
+              Only return the tags in JSON format, structured as:
+              {
+                "clothing": [
+                  { "type": "", "material": "", "colors": [], "pattern": "", "occasion": "", "season": "" }
+                ],
+                "accessories": [
+                  { "type": "", "material": "", "colors": [], "purpose": "" }
+                ]
+              }
+              Do not include explanations or additional text.`,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: imageUrl, detail: 'high' },
+            },
+          ],
+        },
+      ],
+    });
+
+    const gptResponse = response.choices[0]?.message?.content || null;
+
+    if (!gptResponse) {
+      return res.status(500).json({ error: 'No valid response from GPT' });
+    }
+
+    const cleanedResponse = gptResponse.replace(/```json|```/g, '').trim();
+
+    let tags;
+    try {
+      tags = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      console.error('Failed to parse GPT response as JSON:', parseError);
+      console.error('Raw GPT response:', cleanedResponse);
+      return res
+        .status(500)
+        .json({ error: 'Failed to parse the response from GPT.' });
+    }
+
+    if (
+      !tags ||
+      typeof tags !== 'object' ||
+      !tags.clothing ||
+      !tags.accessories
+    ) {
+      return res.status(500).json({ error: 'Invalid tags format from GPT.' });
+    }
+
+    return res.status(200).json({ tags });
+  } catch (error) {
+    console.error('Error analyzing image:', error);
+    return res.status(500).json({ error: 'Failed to process the image.' });
   }
 });
 
