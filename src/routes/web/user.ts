@@ -6,6 +6,8 @@ import {
   updateName,
   updatePersonalInformation,
   updateBodyType,
+  updatePrioritizePreferences,
+  updateConsiderSkinTone,
 } from '../../controllers/user';
 import {
   CreateUserSchema,
@@ -135,6 +137,62 @@ router.post(
       res.status(200).json(updatedUserBodyType);
     } catch (error) {
       console.error('Error updating personal information:', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-consider-skin-tone',
+  async (req: Request, res: Response, next) => {
+    try {
+      const { id, consider_skin_tone } = req.body;
+
+      if (typeof consider_skin_tone !== 'boolean') {
+        return res
+          .status(400)
+          .json({ error: '"consider_skin_tone" must be a boolean value' });
+      }
+
+      const updatedSettings = await updateConsiderSkinTone(
+        id,
+        consider_skin_tone
+      );
+
+      res.status(updatedSettings.status).json({
+        message: updatedSettings.message,
+        settings: updatedSettings.settings,
+      });
+    } catch (error) {
+      console.error('Error updating "Consider Skin Tone":', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-prioritize-preferences',
+  async (req: Request, res: Response, next) => {
+    try {
+      const { id, prioritize_preferences } = req.body;
+
+      if (typeof prioritize_preferences !== 'boolean') {
+        return res
+          .status(400)
+          .json({ error: '"prioritize_preferences" must be a boolean value' });
+      }
+
+      const updatedSettings = await updatePrioritizePreferences(
+        id,
+        prioritize_preferences
+      );
+
+      res.status(updatedSettings.status).json({
+        message: updatedSettings.message,
+        settings: updatedSettings.settings,
+      });
+    } catch (error) {
+      console.error('Error updating "Prioritize Preferences":', error);
       next(error);
     }
   }
