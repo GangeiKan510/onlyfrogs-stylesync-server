@@ -102,6 +102,14 @@ export const createUser = async (body: UserProps) => {
       },
     });
 
+    const promptSettings = await prisma.promptSettings.create({
+      data: {
+        user_id: newUser.id,
+        consider_skin_tone: false,
+        prioritize_preferences: false,
+      },
+    });
+
     const chatSessionResult = await createChatSession({ userId: newUser.id });
 
     if (chatSessionResult.status !== 201 && chatSessionResult.status !== 200) {
@@ -111,9 +119,10 @@ export const createUser = async (body: UserProps) => {
     return {
       ...newUser,
       chatSession: chatSessionResult.session,
+      promptSettings,
     };
   } catch (error) {
-    console.error('Error creating user or chat session:', error);
+    console.error('Error creating user or associated entries:', error);
     throw error;
   }
 };
