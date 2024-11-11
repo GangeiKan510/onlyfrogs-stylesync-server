@@ -16,6 +16,7 @@ export const getUserByEmail = async (email: string) => {
             worn: true,
           },
         },
+        promptSettings: true,
       },
     });
 
