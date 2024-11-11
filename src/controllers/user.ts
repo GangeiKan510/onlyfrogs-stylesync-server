@@ -277,3 +277,79 @@ export const updateProfileUrl = async (userId: string, profileUrl: string) => {
     };
   }
 };
+
+export const updateConsiderSkinTone = async (
+  userId: string,
+  considerSkinTone: boolean
+) => {
+  try {
+    const existingSettings = await prisma.promptSettings.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!existingSettings) {
+      return {
+        status: 404,
+        message: 'Prompt settings not found for the user.',
+      };
+    }
+
+    const updatedSettings = await prisma.promptSettings.update({
+      where: { user_id: userId },
+      data: {
+        consider_skin_tone: considerSkinTone,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Consider Skin Tone updated successfully.',
+      settings: updatedSettings,
+    };
+  } catch (error: any) {
+    console.error('Error updating consider_skin_tone:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
+
+export const updatePrioritizePreferences = async (
+  userId: string,
+  prioritizePreferences: boolean
+) => {
+  try {
+    const existingSettings = await prisma.promptSettings.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (!existingSettings) {
+      return {
+        status: 404,
+        message: 'Prompt settings not found for the user.',
+      };
+    }
+
+    const updatedSettings = await prisma.promptSettings.update({
+      where: { user_id: userId },
+      data: {
+        prioritize_preferences: prioritizePreferences,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Prioritize Preferences updated successfully.',
+      settings: updatedSettings,
+    };
+  } catch (error: any) {
+    console.error('Error updating prioritize_preferences:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
