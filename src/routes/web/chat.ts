@@ -30,12 +30,10 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 
     const user = userResult.user;
 
-    let lat: string | undefined;
-    let lon: string | undefined;
-    let locationName: string | undefined;
-    let weatherDescription: string | undefined;
-    let temperature: string | undefined;
-    let windSpeed: string | undefined;
+    const consider_skin_tone = user?.promptSettings?.consider_skin_tone;
+    const prioritize_preferences = user?.promptSettings?.prioritize_preferences;
+
+    let lat, lon, locationName, weatherDescription, temperature, windSpeed;
 
     if (user?.location) {
       const locationData = user.location as {
@@ -117,6 +115,23 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         `;
     }
 
+    const preferencesMessage = prioritize_preferences
+      ? `
+    When suggesting outfits, prioritize the following preferences:
+    - **Style Preferences**: ${user?.style_preferences.join(', ') || 'unknown'}
+    - **Favorite Colors**: ${user?.favorite_colors.join(', ') || 'unknown'}
+    - **Preferred Brands**: ${user?.preferred_brands.join(', ') || 'unknown'}.
+    `
+      : '';
+
+    const skinToneMessage = consider_skin_tone
+      ? `
+    Consider the user's skin tone when suggesting colors for outfits:
+    - **Skin Tone**: ${user?.skin_tone_classification || 'unknown'}
+    - **Complementary Colors**: ${user?.skin_tone_complements.join(', ') || 'unknown'}.
+    `
+      : '';
+
     const systemMessageContent = `
     You are a virtual stylist assistant named Ali.
     Your job is to create complete outfit suggestions and answer questions related to fashion, clothing, and style based on the user's preferences, closet, and the current weather. 
@@ -132,6 +147,9 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
        - Temperature: ${temperature || 'unknown'}°C
        - Wind Speed: ${windSpeed || 'unknown'} m/s.
     
+    ${preferencesMessage}
+    ${skinToneMessage}
+    ${clothingMessage}
     ### User Information:
     - **Name**: ${user?.first_name} ${user?.last_name || ''}
     - **Location**: ${locationName || 'unknown'}

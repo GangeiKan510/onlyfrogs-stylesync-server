@@ -46,6 +46,7 @@ export const getUserById = async (userId: string) => {
             messages: true,
           },
         },
+        promptSettings: true,
       },
     });
 
