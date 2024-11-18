@@ -110,43 +110,26 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
       messages: [
         {
           role: 'user',
-          content: [
+          content: `
+            Analyze the provided image at the URL: ${imageUrl}. 
+            If it contains clothing or accessories, return a structured JSON object for each identified item with the following fields:
+
             {
-              type: 'text',
-              text: `
-              Analyze the provided image and determine if it contains clothing or accessories. 
-              If it does, return a structured list of tags for each identified item, with separate categories for clothing and accessories.
+              "category": {
+                  "name": "Tops", // Example categories: Tops, Pants, Outerwear, etc.
+                  "type": "T-Shirts" // Example types: T-Shirts, Jackets, etc.
+              },
+              "material": "Cotton", // Example materials: Cotton, Polyester, etc. Use "Other Materials" if unknown.
+              "name": "Cardigan", // General name for the item
+              "occasion": ["Daily", "Travel"], // Can include multiple values: Daily, Work, Travel, etc.
+              "pattern": "Solid", // Example patterns: Solid, Floral, Striped, etc. Use "Other Patterns" if unknown.
+              "season": ["Spring", "Winter", "Summer"] // Can include multiple values: Spring, Summer, Autumn, Winter
+            }
 
-              For clothing, provide:
-              - Type (e.g., shirt, pants, jacket).
-              - Material (e.g., cotton, denim).
-              - Color(s).
-              - Pattern (e.g., striped, plain, floral).
-              - Occasion (e.g., casual, formal, sports).
-              - Season (e.g., summer, winter, all-season).
+            If any field (e.g., material, pattern) is not recognized, default to "Other Materials" or "Other Patterns". 
 
-              For accessories, provide:
-              - Type (e.g., watch, necklace, handbag).
-              - Material (e.g., leather, metal).
-              - Color(s).
-              - Purpose (e.g., fashion, utility, both).
-
-              Only return the tags in JSON format, structured as:
-              {
-                "clothing": [
-                  { "type": "", "material": "", "colors": [], "pattern": "", "occasion": "", "season": "" }
-                ],
-                "accessories": [
-                  { "type": "", "material": "", "colors": [], "purpose": "" }
-                ]
-              }
-              Do not include explanations or additional text.`,
-            },
-            {
-              type: 'image_url',
-              image_url: { url: imageUrl, detail: 'high' },
-            },
-          ],
+            Only return the tags in JSON format without any additional explanation or text.
+          `,
         },
       ],
     });
@@ -159,9 +142,9 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
 
     const cleanedResponse = gptResponse.replace(/```json|```/g, '').trim();
 
-    let tags;
+    let analyzedTags;
     try {
-      tags = JSON.parse(cleanedResponse);
+      analyzedTags = JSON.parse(cleanedResponse);
     } catch (parseError) {
       console.error('Failed to parse GPT response as JSON:', parseError);
       console.error('Raw GPT response:', cleanedResponse);
@@ -170,16 +153,29 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
         .json({ error: 'Failed to parse the response from GPT.' });
     }
 
+    analyzedTags.material =
+      analyzedTags.material === 'Unknown'
+        ? 'Other Materials'
+        : analyzedTags.material;
+    analyzedTags.pattern =
+      analyzedTags.pattern === 'Unknown'
+        ? 'Other Patterns'
+        : analyzedTags.pattern;
+
     if (
-      !tags ||
-      typeof tags !== 'object' ||
-      !tags.clothing ||
-      !tags.accessories
+      !analyzedTags ||
+      typeof analyzedTags !== 'object' ||
+      !analyzedTags.category ||
+      !analyzedTags.material ||
+      !Array.isArray(analyzedTags.occasion) ||
+      !Array.isArray(analyzedTags.season)
     ) {
-      return res.status(500).json({ error: 'Invalid tags format from GPT.' });
+      return res
+        .status(500)
+        .json({ error: 'Invalid response format from GPT.' });
     }
 
-    return res.status(200).json({ tags });
+    return res.status(200).json({ tags: analyzedTags });
   } catch (error) {
     console.error('Error analyzing image:', error);
     return res.status(500).json({ error: 'Failed to process the image.' });
