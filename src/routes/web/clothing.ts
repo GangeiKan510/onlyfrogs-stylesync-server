@@ -120,7 +120,6 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
                   "type": "T-Shirts" // Example types: T-Shirts, Jackets, etc.
               },
               "material": "Cotton", // Example materials: Cotton, Polyester, etc. Use "Other Materials" if unknown.
-              "name": "Cardigan", // General name for the item
               "occasion": ["Daily", "Travel"], // Can include multiple values: Daily, Work, Travel, etc.
               "pattern": "Solid", // Example patterns: Solid, Floral, Striped, etc. Use "Other Patterns" if unknown.
               "season": ["Spring", "Winter", "Summer"] // Can include multiple values: Spring, Summer, Autumn, Winter
