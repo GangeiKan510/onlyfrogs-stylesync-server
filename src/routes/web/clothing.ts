@@ -173,11 +173,20 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
         .json({ error: 'No valid response from OpenAI Vision API.' });
     }
 
+    const cleanedResponse = gptResponse
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+
     let analyzedTags;
     try {
-      analyzedTags = JSON.parse(gptResponse.trim());
+      analyzedTags = JSON.parse(cleanedResponse);
     } catch (parseError) {
-      console.error('Failed to parse GPT response:', gptResponse, parseError);
+      console.error(
+        'Failed to parse GPT response:',
+        cleanedResponse,
+        parseError
+      );
       return res.status(500).json({
         error: 'Failed to parse the response from OpenAI Vision API.',
       });
