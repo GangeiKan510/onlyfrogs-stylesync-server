@@ -144,6 +144,7 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
                   "occasion": ["Casual", "Travel"], // Use valid options. Default: []
                   "pattern": "Solid", // Use valid options. Default: "Other Patterns"
                   "season": ["Summer", "Spring"] // Use valid options. Default: []
+                  "color": "Blue" // Use a single valid value. Default: null.
                 }
 
                 Use the following predefined options:
@@ -152,6 +153,7 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
                 - **Categories and Types:** {list provided in your original example}
                 - **Materials:** Cotton, Polyester, Nylon, etc.
                 - **Patterns:** Solid, Floral, Striped, etc.
+                - **Colors:** White, Cream, Beige, Light-Gray, Dark-Gray, Black, Light-Pink, Yellow, Light-Green, Torquoise, Light-Blue, Light-Purple, Silver, Pink, Coral, Orange, Green, Blue, Purple, Red, Camel, Brown, Khaki, Navy, Wine, Gold
 
                 Only output the JSON object, and default unrecognized fields to "Other Materials" or "Other Patterns."
               `,
@@ -191,6 +193,7 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
         error: 'Failed to parse the response from OpenAI Vision API.',
       });
     }
+
     analyzedTags = {
       category: analyzedTags.category || { name: 'Unknown', type: 'Unknown' },
       material: analyzedTags.material || 'Other Materials',
@@ -199,6 +202,7 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
         : [],
       pattern: analyzedTags.pattern || 'Other Patterns',
       season: Array.isArray(analyzedTags.season) ? analyzedTags.season : [],
+      color: typeof analyzedTags.color === 'string' ? analyzedTags.color : null,
     };
 
     return res.status(200).json({ tags: analyzedTags });
