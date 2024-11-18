@@ -12,6 +12,7 @@ import {
   updateWornDate,
 } from '../../controllers/clothing';
 import OpenAI from 'openai';
+import axios from 'axios';
 
 const router = Router();
 
@@ -105,30 +106,61 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
   }
 
   try {
+    const validateImage = async (url: string) => {
+      try {
+        const response = await axios.head(url);
+        return (
+          response.status === 200 &&
+          response.headers['content-type'].includes('image')
+        );
+      } catch (error) {
+        return false;
+      }
+    };
+
+    const isValidImage = await validateImage(imageUrl);
+    if (!isValidImage) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid or inaccessible image URL.' });
+    }
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
         {
           role: 'user',
-          content: `
-            Analyze the provided image at the URL: ${imageUrl}. 
-            If it contains clothing or accessories, return a structured JSON object for each identified item with the following fields:
-
+          content: [
             {
-              "category": {
-                  "name": "Tops", // Example categories: Tops, Pants, Outerwear, etc.
-                  "type": "T-Shirts" // Example types: T-Shirts, Jackets, etc.
-              },
-              "material": "Cotton", // Example materials: Cotton, Polyester, etc. Use "Other Materials" if unknown.
-              "occasion": ["Daily", "Travel"], // Can include multiple values: Daily, Work, Travel, etc.
-              "pattern": "Solid", // Example patterns: Solid, Floral, Striped, etc. Use "Other Patterns" if unknown.
-              "season": ["Spring", "Winter", "Summer"] // Can include multiple values: Spring, Summer, Autumn, Winter
-            }
+              type: 'text',
+              text: `
+                Analyze the image at the following URL and return the following structured data:
+                {
+                  "category": {
+                      "name": "Tops", // Example categories: Tops, Pants, Outerwear, etc.
+                      "type": "T-Shirts" // Example subcategories: T-Shirts, Jackets, etc.
+                  },
+                  "material": "Cotton", // Valid options: Cotton, Polyester, etc. Default: "Other Materials"
+                  "occasion": ["Casual", "Travel"], // Use valid options. Default: []
+                  "pattern": "Solid", // Use valid options. Default: "Other Patterns"
+                  "season": ["Summer", "Spring"] // Use valid options. Default: []
+                }
 
-            If any field (e.g., material, pattern) is not recognized, default to "Other Materials" or "Other Patterns". 
+                Use the following predefined options:
+                - **Season:** Spring, Summer, Autumn, Winter
+                - **Occasion:** Daily, Work, Date, Formal, Travel, Home, Party, Sport, Casual, Beach, Others
+                - **Categories and Types:** {list provided in your original example}
+                - **Materials:** Cotton, Polyester, Nylon, etc.
+                - **Patterns:** Solid, Floral, Striped, etc.
 
-            Only return the tags in JSON format without any additional explanation or text.
-          `,
+                Only output the JSON object, and default unrecognized fields to "Other Materials" or "Other Patterns."
+              `,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: imageUrl, detail: 'high' },
+            },
+          ],
         },
       ],
     });
@@ -136,47 +168,33 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
     const gptResponse = response.choices[0]?.message?.content || null;
 
     if (!gptResponse) {
-      return res.status(500).json({ error: 'No valid response from GPT' });
+      return res
+        .status(500)
+        .json({ error: 'No valid response from OpenAI Vision API.' });
     }
-
-    const cleanedResponse = gptResponse.replace(/```json|```/g, '').trim();
 
     let analyzedTags;
     try {
-      analyzedTags = JSON.parse(cleanedResponse);
+      analyzedTags = JSON.parse(gptResponse.trim());
     } catch (parseError) {
-      console.error('Failed to parse GPT response as JSON:', parseError);
-      console.error('Raw GPT response:', cleanedResponse);
-      return res
-        .status(500)
-        .json({ error: 'Failed to parse the response from GPT.' });
+      console.error('Failed to parse GPT response:', gptResponse, parseError);
+      return res.status(500).json({
+        error: 'Failed to parse the response from OpenAI Vision API.',
+      });
     }
-
-    analyzedTags.material =
-      analyzedTags.material === 'Unknown'
-        ? 'Other Materials'
-        : analyzedTags.material;
-    analyzedTags.pattern =
-      analyzedTags.pattern === 'Unknown'
-        ? 'Other Patterns'
-        : analyzedTags.pattern;
-
-    if (
-      !analyzedTags ||
-      typeof analyzedTags !== 'object' ||
-      !analyzedTags.category ||
-      !analyzedTags.material ||
-      !Array.isArray(analyzedTags.occasion) ||
-      !Array.isArray(analyzedTags.season)
-    ) {
-      return res
-        .status(500)
-        .json({ error: 'Invalid response format from GPT.' });
-    }
+    analyzedTags = {
+      category: analyzedTags.category || { name: 'Unknown', type: 'Unknown' },
+      material: analyzedTags.material || 'Other Materials',
+      occasion: Array.isArray(analyzedTags.occasion)
+        ? analyzedTags.occasion
+        : [],
+      pattern: analyzedTags.pattern || 'Other Patterns',
+      season: Array.isArray(analyzedTags.season) ? analyzedTags.season : [],
+    };
 
     return res.status(200).json({ tags: analyzedTags });
   } catch (error) {
-    console.error('Error analyzing image:', error);
+    console.error('Error processing image with OpenAI Vision API:', error);
     return res.status(500).json({ error: 'Failed to process the image.' });
   }
 });
