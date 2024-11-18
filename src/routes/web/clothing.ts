@@ -193,7 +193,14 @@ router.post('/analyze-item', async (req: Request, res: Response) => {
     };
 
     return res.status(200).json({ tags: analyzedTags });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes('Timeout')) {
+      console.error('Image URL timed out:', imageUrl);
+      return res.status(400).json({
+        error: 'Image URL timed out. Please try again with a different image.',
+      });
+    }
+
     console.error('Error processing image with OpenAI Vision API:', error);
     return res.status(500).json({ error: 'Failed to process the image.' });
   }
