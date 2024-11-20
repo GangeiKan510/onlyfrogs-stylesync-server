@@ -273,56 +273,60 @@ router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
 
     console.log('Outfit Lines:', outfitLines);
 
-    // Call GPT-4 Turbo to refine parsing
-    const gptParsingPrompt = `
-      Extract essential attributes for each line in the following format:
-      - "itemType": The main item type (e.g., "sandals", "hat", "shirt").
-      - "colors": A list of colors (e.g., ["white", "beige"]).
-      - "context": The context or purpose of the item (e.g., "beach outfit").
-      
-      Respond with a JSON array where each object includes:
-      - "line": The original line.
-      - "itemType": The main item type.
-      - "colors": The colors associated with the item.
-      - "context": The item's context or purpose.
+    // Call GPT-4 Turbo to refine parsing and categorization
+    const gptCategorizationPrompt = `
+      For each line, categorize and extract essential attributes:
+      - "category": "closet" if it's from the user's closet (e.g., starts with "Your").
+                     "generic" if it's a general suggestion (e.g., "white sandals").
+                     "missing" if it's an essential item not in the user's closet.
+      - "itemType": The main item type (e.g., "sandals", "hat").
+      - "colors": A list of associated colors (e.g., ["white", "beige"]).
+      - "context": The context or purpose (e.g., "beach outfit").
 
+      Respond with a JSON array of:
+      { "line": "original line", "category": "closet|generic|missing", "itemType": "type", "colors": [], "context": "context" }
+      
       Input:
       ${JSON.stringify(outfitLines)}
     `;
 
-    const gptParsingResponse = await openai.chat.completions.create({
+    const gptResponse = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
-      messages: [{ role: 'system', content: gptParsingPrompt }],
+      messages: [{ role: 'system', content: gptCategorizationPrompt }],
     });
 
     const parsedItems = JSON.parse(
-      gptParsingResponse.choices[0]?.message?.content || '[]'
+      gptResponse.choices[0]?.message?.content || '[]'
     );
 
     console.log('Parsed Items:', parsedItems);
 
-    // Extract items to scrape from parsed attributes
-    const itemsToScrape = parsedItems.map((item: any) => {
-      const { itemType, colors, context } = item;
+    // Filter items to scrape: only include "generic" and "missing" items
+    const itemsToScrape = parsedItems
+      .filter(
+        (item: any) =>
+          item.category === 'generic' || item.category === 'missing'
+      )
+      .map((item: any) => {
+        const { itemType, colors, context } = item;
 
-      // Build an intelligent search query
-      console.log('GENDER', gender);
-      const queryParts = [
-        gender === 'Male' ? 'Men' : 'Women', // Gender prefix
-        ...(colors || []), // Colors
-        itemType, // Item type
-        context, // Context
-      ];
+        // Build intelligent search query
+        const queryParts = [
+          gender === 'Male' ? 'Men' : 'Women', // Gender prefix
+          ...(colors || []), // Colors
+          itemType, // Item type
+          context, // Context
+        ];
 
-      // Join query parts and clean up
-      const searchQuery = queryParts
-        .filter(Boolean)
-        .join(' ')
-        .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
-        .trim();
+        // Join query parts and clean up
+        const searchQuery = queryParts
+          .filter(Boolean)
+          .join(' ')
+          .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
+          .trim();
 
-      return { searchQuery };
-    });
+        return { searchQuery };
+      });
 
     console.log('Items to Scrape:', itemsToScrape);
 
