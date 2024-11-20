@@ -310,7 +310,7 @@ router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
       .map((item: any) => {
         const { itemType, colors, context } = item;
 
-        // Build intelligent search query
+        // Build initial search query
         const queryParts = [
           gender === 'Male' ? 'Men' : 'Women', // Gender prefix
           ...(colors || []), // Colors
@@ -318,26 +318,46 @@ router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
           context, // Context
         ];
 
-        // Join query parts and clean up
-        const searchQuery = queryParts
+        const rawSearchQuery = queryParts
           .filter(Boolean)
           .join(' ')
           .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
           .trim();
 
-        return { searchQuery };
+        return { rawSearchQuery };
       });
 
-    console.log('Items to Scrape:', itemsToScrape);
+    console.log('Initial Search Queries:', itemsToScrape);
 
-    if (itemsToScrape.length === 0) {
+    // Optimize search queries using GPT-4 Turbo
+    const optimizedQueries = await Promise.all(
+      itemsToScrape.map(async ({ rawSearchQuery }: any) => {
+        const searchQueryOptimizationPrompt = `
+          Refine the following search query for simplicity and accuracy - as if your are searching for an item in an online store. Remove unnecessary words and focus on the key words, don't be too specific (e.g., "Men black sneakers casual"):
+          Input Query: "${rawSearchQuery}"
+        `;
+
+        const gptOptimizationResponse = await openai.chat.completions.create({
+          model: 'gpt-4-turbo',
+          messages: [
+            { role: 'system', content: searchQueryOptimizationPrompt },
+          ],
+        });
+
+        return gptOptimizationResponse?.choices[0]?.message?.content?.trim();
+      })
+    );
+
+    console.log('Optimized Search Queries:', optimizedQueries);
+
+    if (optimizedQueries.length === 0) {
       return res.status(200).json({ message: 'No items to scrape.' });
     }
 
-    // Prepare scraping queries for items to scrape
+    // Prepare scraping queries for optimized queries
     const browser = await puppeteer.launch({ headless: true });
     const searchResults = await Promise.all(
-      itemsToScrape.map(async ({ searchQuery }: any) => {
+      optimizedQueries.map(async (searchQuery) => {
         const encodedQuery = encodeURIComponent(searchQuery);
         const budgetRange = `price=${budget_min}-${budget_max}`;
         const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}&${budgetRange}`;
