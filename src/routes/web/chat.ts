@@ -243,6 +243,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Error processing the request' });
   }
 });
+
 router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
   const { userId, promptGptResponse } = req.body;
 
@@ -265,69 +266,74 @@ router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
     // Extract outfit lines from GPT response
     const outfitLines = promptGptResponse.message
       .split('\n')
-      .filter((line: string) => line.startsWith('- **'));
+      .filter(
+        (line: string) =>
+          line.startsWith('- **') || line.startsWith('- Generic')
+      );
 
     console.log('Outfit Lines:', outfitLines);
 
-    // Call GPT-4 Turbo to classify items
-    const gptCategorizationPrompt = `
-      Categorize each line into one of the following categories:
-      - "closet": If the item is explicitly mentioned as being from the user's closet (e.g., prefixed with "Your").
-      - "generic": If the item is a generic suggestion (e.g., accessories, footwear, or general items like "white sandals").
-      - "missing": If the item is not in the user's closet and is essential to complete the outfit.
-
+    // Call GPT-4 Turbo to refine parsing
+    const gptParsingPrompt = `
+      Extract essential attributes for each line in the following format:
+      - "itemType": The main item type (e.g., "sandals", "hat", "shirt").
+      - "colors": A list of colors (e.g., ["white", "beige"]).
+      - "context": The context or purpose of the item (e.g., "beach outfit").
+      
       Respond with a JSON array where each object includes:
       - "line": The original line.
-      - "category": The category ("closet", "generic", or "missing").
-      
-      Example Input:
-      - **Your Blue Shirt**: A versatile shirt for casual occasions.
-      - **White Sandals**: Ideal for a summer outfit.
-
-      Example Output:
-      [
-        { "line": "**Your Blue Shirt**: A versatile shirt for casual occasions.", "category": "closet" },
-        { "line": "**White Sandals**: Ideal for a summer outfit.", "category": "generic" }
-      ]
+      - "itemType": The main item type.
+      - "colors": The colors associated with the item.
+      - "context": The item's context or purpose.
 
       Input:
       ${JSON.stringify(outfitLines)}
     `;
 
-    const gptCategorizationResponse = await openai.chat.completions.create({
+    const gptParsingResponse = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
-      messages: [{ role: 'system', content: gptCategorizationPrompt }],
+      messages: [{ role: 'system', content: gptParsingPrompt }],
     });
 
-    const categorizedItems = JSON.parse(
-      gptCategorizationResponse.choices[0]?.message?.content || '[]'
+    const parsedItems = JSON.parse(
+      gptParsingResponse.choices[0]?.message?.content || '[]'
     );
 
-    console.log('Categorized Items:', categorizedItems);
+    console.log('Parsed Items:', parsedItems);
 
-    // Extract missing pieces
-    const missingPieces = categorizedItems
-      .filter((item: any) => item.category === 'missing')
-      .map((item: any) =>
-        item.line
-          .match(/\*\*(.*?)\*\*/)?.[1]
-          ?.toLowerCase()
-          ?.trim()
-      )
-      .filter(Boolean);
+    // Extract items to scrape from parsed attributes
+    const itemsToScrape = parsedItems.map((item: any) => {
+      const { itemType, colors, context } = item;
 
-    console.log('Missing Pieces:', missingPieces);
+      // Build an intelligent search query
+      console.log('GENDER', gender);
+      const queryParts = [
+        gender === 'Male' ? 'Men' : 'Women', // Gender prefix
+        ...(colors || []), // Colors
+        itemType, // Item type
+        context, // Context
+      ];
 
-    if (missingPieces.length === 0) {
-      return res.status(200).json({ message: 'No missing pieces to scrape.' });
+      // Join query parts and clean up
+      const searchQuery = queryParts
+        .filter(Boolean)
+        .join(' ')
+        .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
+        .trim();
+
+      return { searchQuery };
+    });
+
+    console.log('Items to Scrape:', itemsToScrape);
+
+    if (itemsToScrape.length === 0) {
+      return res.status(200).json({ message: 'No items to scrape.' });
     }
 
-    // Prepare scraping queries for missing pieces
-    const genderPrefix = gender.toLowerCase() === 'male' ? 'mens' : 'womens';
+    // Prepare scraping queries for items to scrape
     const browser = await puppeteer.launch({ headless: true });
     const searchResults = await Promise.all(
-      missingPieces.map(async (piece: string) => {
-        const searchQuery = `${genderPrefix} ${piece}`;
+      itemsToScrape.map(async ({ searchQuery }: any) => {
         const encodedQuery = encodeURIComponent(searchQuery);
         const budgetRange = `price=${budget_min}-${budget_max}`;
         const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}&${budgetRange}`;
@@ -392,7 +398,11 @@ router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
 
         await page.close();
 
-        return { piece, searchUrl, products: products.slice(0, 3) }; // Limit to top 3 results
+        return {
+          piece: searchQuery,
+          searchUrl,
+          products: products.slice(0, 3),
+        }; // Limit to top 3 results
       })
     );
 
@@ -400,7 +410,7 @@ router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
 
     return res.status(200).json({ searchResults });
   } catch (error: any) {
-    console.error('Error scraping for missing pieces:', error.message);
+    console.error('Error scraping for items:', error.message);
     return res
       .status(500)
       .json({ error: 'An error occurred while processing the request.' });
