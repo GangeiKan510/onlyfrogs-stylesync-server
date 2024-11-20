@@ -7,8 +7,12 @@ import OpenAI from 'openai';
 import axios from 'axios';
 import { sendMessage } from '../../controllers/chat';
 import { getUserById } from '../../controllers/user';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
 const router = Router();
+
+puppeteer.use(StealthPlugin());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -90,7 +94,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       ${userClothes
         .map(
           (item) => `
-      - **${item.name}**:
+      - **Your ${item.name}**:
         - Brand: ${item.brand}
         - Category: ${item.category}
         - Color: ${item.color}
@@ -102,8 +106,13 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       `
         )
         .join('\n')} 
-        Please prioritize these items when suggesting outfits. If essential items are missing, feel free to suggest generic options to pair with them. Ensure that all chosen clothing from the closet includes its images using markdown image syntax like \`![Item Name](image_url)\`.
-        `;
+      Please prioritize these items when suggesting outfits. 
+      When referencing these items in the outfit suggestion, **always prepend "Your"** to the item name (e.g., "Your Blue Hoodie"). For example:
+      - Your Blue Hoodie: Available in the closet.
+      - Your Black Jeans: Perfect for casual outings.
+    
+      If essential items are missing, feel free to suggest generic options to pair with them. Ensure that all chosen clothing from the closet includes its images using markdown image syntax like \`![Item Name](image_url)\`.
+      `;
     } else {
       clothingMessage = `
         The user has no clothing items in their closet.
@@ -112,7 +121,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         - Temperature: ${temperature}°C
         - Wind Speed: ${windSpeed} m/s.
         Include generic items suitable for these conditions.
-        `;
+      `;
     }
 
     const preferencesMessage = prioritize_preferences
@@ -146,6 +155,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
        - Weather: ${weatherDescription || 'unknown'}
        - Temperature: ${temperature || 'unknown'}°C
        - Wind Speed: ${windSpeed || 'unknown'} m/s.
+    7. If you chose clothing items from closet, always include "Your" prepend before the item name to indicate it's from the user's closet.
     
     ${preferencesMessage}
     ${skinToneMessage}
@@ -187,6 +197,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     - Provide the response in markdown format.
     - Use headings like \`## Outfit Suggestion\` to structure the response.
     - List all items in the outfit with bullet points.
+    - For items from the user's closet, prepend "Your" to the item name (e.g., "Your Blue Hoodie").
     - Include markdown image links for the closet items.
     - For any generic items, list them without images.
     `;
@@ -197,6 +208,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       { role: 'user', content: userMessage },
     ];
 
+    console.log('FULL CONVERSATION', fullConversation);
     const openaiResponse = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: fullConversation,
@@ -229,6 +241,169 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       error
     );
     return res.status(500).json({ error: 'Error processing the request' });
+  }
+});
+router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
+  const { userId, promptGptResponse } = req.body;
+
+  if (!userId || !promptGptResponse) {
+    return res
+      .status(400)
+      .json({ error: 'User ID and prompt GPT response are required.' });
+  }
+
+  try {
+    // Fetch user data
+    const userResult = await getUserById(userId);
+    if (userResult.status !== 200) {
+      return res.status(userResult.status).json(userResult);
+    }
+
+    const user = userResult.user;
+    const { budget_min, budget_max, gender }: any = user;
+
+    // Extract outfit lines from GPT response
+    const outfitLines = promptGptResponse.message
+      .split('\n')
+      .filter((line: string) => line.startsWith('- **'));
+
+    console.log('Outfit Lines:', outfitLines);
+
+    // Call GPT-4 Turbo to classify items
+    const gptCategorizationPrompt = `
+      Categorize each line into one of the following categories:
+      - "closet": If the item is explicitly mentioned as being from the user's closet (e.g., prefixed with "Your").
+      - "generic": If the item is a generic suggestion (e.g., accessories, footwear, or general items like "white sandals").
+      - "missing": If the item is not in the user's closet and is essential to complete the outfit.
+
+      Respond with a JSON array where each object includes:
+      - "line": The original line.
+      - "category": The category ("closet", "generic", or "missing").
+      
+      Example Input:
+      - **Your Blue Shirt**: A versatile shirt for casual occasions.
+      - **White Sandals**: Ideal for a summer outfit.
+
+      Example Output:
+      [
+        { "line": "**Your Blue Shirt**: A versatile shirt for casual occasions.", "category": "closet" },
+        { "line": "**White Sandals**: Ideal for a summer outfit.", "category": "generic" }
+      ]
+
+      Input:
+      ${JSON.stringify(outfitLines)}
+    `;
+
+    const gptCategorizationResponse = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [{ role: 'system', content: gptCategorizationPrompt }],
+    });
+
+    const categorizedItems = JSON.parse(
+      gptCategorizationResponse.choices[0]?.message?.content || '[]'
+    );
+
+    console.log('Categorized Items:', categorizedItems);
+
+    // Extract missing pieces
+    const missingPieces = categorizedItems
+      .filter((item: any) => item.category === 'missing')
+      .map((item: any) =>
+        item.line
+          .match(/\*\*(.*?)\*\*/)?.[1]
+          ?.toLowerCase()
+          ?.trim()
+      )
+      .filter(Boolean);
+
+    console.log('Missing Pieces:', missingPieces);
+
+    if (missingPieces.length === 0) {
+      return res.status(200).json({ message: 'No missing pieces to scrape.' });
+    }
+
+    // Prepare scraping queries for missing pieces
+    const genderPrefix = gender.toLowerCase() === 'male' ? 'mens' : 'womens';
+    const browser = await puppeteer.launch({ headless: true });
+    const searchResults = await Promise.all(
+      missingPieces.map(async (piece: string) => {
+        const searchQuery = `${genderPrefix} ${piece}`;
+        const encodedQuery = encodeURIComponent(searchQuery);
+        const budgetRange = `price=${budget_min}-${budget_max}`;
+        const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}&${budgetRange}`;
+
+        const page = await browser.newPage();
+        await page.goto(searchUrl, { waitUntil: 'networkidle2' });
+
+        const products = await page.evaluate(() => {
+          const productElements = document.querySelectorAll(
+            'a[data-test-id="productLink"]'
+          );
+          const productData: Array<{
+            name: string;
+            price: string;
+            originalPrice?: string;
+            discount?: string;
+            image: string;
+            productUrl: string;
+            brand: string;
+          }> = [];
+
+          productElements.forEach((element) => {
+            const name =
+              element
+                .querySelector('div[data-test-id="productTitle"]')
+                ?.textContent?.trim() || '';
+            const price =
+              element
+                .querySelector('div[data-test-id="productPrice"] .font-bold')
+                ?.textContent?.trim() || '';
+            const originalPrice =
+              element
+                .querySelector('div[data-test-id="originalPrice"]')
+                ?.textContent?.trim() || '';
+            const discount =
+              element
+                .querySelector('div[data-test-id="discountPercentage"]')
+                ?.textContent?.trim() || '';
+            const image =
+              element.querySelector('img')?.getAttribute('src') || '';
+            const productUrl = element.getAttribute('href') || '';
+            const brand =
+              element
+                .querySelector('span[data-test-id="productBrandName"]')
+                ?.textContent?.trim() || '';
+
+            if (name && price && productUrl) {
+              productData.push({
+                name,
+                price,
+                originalPrice,
+                discount,
+                image,
+                productUrl,
+                brand,
+              });
+            }
+          });
+
+          return productData;
+        });
+
+        await page.close();
+
+        return { piece, searchUrl, products: products.slice(0, 3) }; // Limit to top 3 results
+      })
+    );
+
+    await browser.close();
+
+    return res.status(200).json({ searchResults });
+  } catch (error: any) {
+    console.error('Error scraping for missing pieces:', error.message);
+    return res
+      .status(500)
+      .json({ error: 'An error occurred while processing the request.' });
   }
 });
 
