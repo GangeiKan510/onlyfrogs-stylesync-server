@@ -1,13 +1,19 @@
 import firebaseAdmin from 'firebase-admin';
-import { readFileSync } from 'fs';
 
-const data = readFileSync(
-  './onlyfroggs-stylesync-firebase-adminsdk-jvryu-5c6e9d6852.json'
+const firebaseCredentials = process.env.FIREBASE_CREDENTIALS;
+
+if (!firebaseCredentials) {
+  throw new Error('FIREBASE_CREDENTIALS environment variable is not set.');
+}
+
+const firebaseAdminServiceAccount = JSON.parse(
+  Buffer.from(firebaseCredentials, 'base64').toString()
 );
-const firebaseAdminServiceAccount = JSON.parse(data.toString());
+
 const firebaseAdminOptions = {
   credential: firebaseAdmin.credential.cert(firebaseAdminServiceAccount),
 };
+
 export const firebaseAdminApp = firebaseAdmin.initializeApp(
   firebaseAdminOptions,
   'onlyfroggs-stylesync'
