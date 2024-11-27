@@ -4,18 +4,18 @@ import 'dotenv/config';
 import bodyParser from 'body-parser';
 import webRouter from './routes/web';
 import prisma from './controllers/db';
+import { assertJwtExist } from './validators/auth-validator';
 
 const port = process.env.PORT || 3000;
 const app: Express = express();
 
-app.use(express.json());
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use('/web', webRouter);
+app.use('/web', assertJwtExist(), webRouter);
 
-app.get('/', (req: Request, res: Response) =>
+app.get('/', assertJwtExist(), (req: Request, res: Response) =>
   res.send('OnlyFrogs StyleSync Server')
 );
 
