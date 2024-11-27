@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/web', assertJwtExist(), webRouter);
 
-app.get('/', assertJwtExist(), (req: Request, res: Response) =>
+app.get('/', (req: Request, res: Response) =>
   res.send('OnlyFrogs StyleSync Server')
 );
 
