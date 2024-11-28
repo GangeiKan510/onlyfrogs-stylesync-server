@@ -5,8 +5,8 @@ export const createCloset = async (body: ClosetProps) => {
   try {
     const newCloset = await prisma.closet.create({
       data: {
-        name: body.name,
-        description: body.description,
+        name: body.name || '',
+        description: body.description || '',
         user_id: body.user_id,
       },
     });

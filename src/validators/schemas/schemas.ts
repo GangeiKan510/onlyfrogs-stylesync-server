@@ -134,8 +134,8 @@ export const UpdatePersonalInformationSchema = z.object({
 });
 
 export const ClosetSchema = z.object({
-  name: z.string().nonempty({ message: 'Closet name is required' }),
-  description: z.string().nonempty({ message: 'Description name is required' }),
+  name: z.string().optional(),
+  description: z.string().optional(),
   user_id: z.string().nonempty({ message: 'User ID is required' }),
 });
 
