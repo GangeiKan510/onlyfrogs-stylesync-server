@@ -11,8 +11,13 @@ import axios from 'axios';
 import firebaseConfig from '../../config/firebase.config';
 import { createClothing } from '../../controllers/clothing';
 import { updateProfileUrl } from '../../controllers/user';
+import OpenAI from 'openai';
 
 const router: Router = express.Router();
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 initializeApp(firebaseConfig);
 
@@ -64,6 +69,81 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     );
 
     const processedImageUrl = backgroundRemovalResponse.data.file_url;
+
+    const prompt = `
+      You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet.
+
+      Clothing items include:
+      - Tops (e.g., shirts, blouses, t-shirts, jackets, coats)
+      - Bottoms (e.g., pants, jeans, shorts, skirts)
+      - Dresses
+      - Outerwear (e.g., sweaters, hoodies)
+      - Footwear (e.g., shoes, boots)
+      - Accessories commonly stored in a closet (e.g., hats, belts, scarves)
+
+      Criteria:
+      1. The clothing item must be **clear and visually identifiable** in the image.
+      2. The clothing item must be **presentable** (not damaged, incomplete, or too ambiguous to determine).
+      3. Non-clothing objects or unclear visuals should result in 'false'.
+
+      Analyze the image and respond only with the following structured JSON:
+      {
+        "isClothing": true // if the image contains a clear and presentable clothing item,
+        "isClothing": false // if the image does not contain a clothing item or is ambiguous
+      }
+
+      URL: ${processedImageUrl}
+
+      Ensure your response is valid JSON. Do not include any additional text or comments.
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: prompt,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: processedImageUrl, detail: 'high' },
+            },
+          ],
+        },
+      ],
+    });
+
+    const gptResponse = response.choices[0]?.message?.content || null;
+
+    if (!gptResponse) {
+      return res
+        .status(500)
+        .json({ error: 'No valid response from OpenAI API.' });
+    }
+
+    const cleanedResponse = gptResponse
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(cleanedResponse);
+    } catch (error) {
+      console.error('Failed to parse GPT response:', cleanedResponse, error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to parse the response from OpenAI API.' });
+    }
+
+    if (!parsedResponse.isClothing) {
+      return res
+        .status(400)
+        .json({ error: 'The uploaded image is not a valid clothing item.' });
+    }
 
     const clothingData = {
       image_url: processedImageUrl,
@@ -117,6 +197,82 @@ router.post('/upload-image-url', async (req, res) => {
     );
 
     const processedImageUrl = backgroundRemovalResponse.data.file_url;
+
+    const prompt = `
+      You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet.
+
+      Clothing items include:
+      - Tops (e.g., shirts, blouses, t-shirts, jackets, coats)
+      - Bottoms (e.g., pants, jeans, shorts, skirts)
+      - Dresses
+      - Outerwear (e.g., sweaters, hoodies)
+      - Footwear (e.g., shoes, boots)
+      - Accessories commonly stored in a closet (e.g., hats, belts, scarves)
+
+      Criteria:
+      1. The clothing item must be **clear and visually identifiable** in the image.
+      2. The clothing item must be **presentable** (not damaged, incomplete, or too ambiguous to determine).
+      3. Non-clothing objects or unclear visuals should result in 'false'.
+
+      Analyze the image and respond only with the following structured JSON:
+      {
+        "isClothing": true // if the image contains a clear and presentable clothing item,
+        "isClothing": false // if the image does not contain a clothing item or is ambiguous
+      }
+
+      URL: ${processedImageUrl}
+
+      Ensure your response is valid JSON. Do not include any additional text or comments.
+    `;
+
+    const verificationResponse = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: prompt,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: processedImageUrl, detail: 'high' },
+            },
+          ],
+        },
+      ],
+    });
+
+    const gptResponse =
+      verificationResponse.choices[0]?.message?.content || null;
+
+    if (!gptResponse) {
+      return res
+        .status(500)
+        .json({ error: 'No valid response from OpenAI API.' });
+    }
+
+    const cleanedResponse = gptResponse
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(cleanedResponse);
+    } catch (error) {
+      console.error('Failed to parse GPT response:', cleanedResponse, error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to parse the response from OpenAI API.' });
+    }
+
+    if (!parsedResponse.isClothing) {
+      return res
+        .status(400)
+        .json({ error: 'The uploaded image is not a valid clothing item.' });
+    }
 
     const dateTime = giveCurrentDateTime();
     const storageRef = ref(storage, `files/${processedImageUrl}_${dateTime}`);
