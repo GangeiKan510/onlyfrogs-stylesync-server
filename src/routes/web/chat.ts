@@ -245,10 +245,12 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
 });
 
 router.post('/extract-clothes', async (req: Request, res: Response) => {
-  const { promptGptResponse } = req.body;
+  const { promptGptResponse, userId } = req.body;
 
-  if (!promptGptResponse) {
-    return res.status(400).json({ error: 'Prompt GPT response is required.' });
+  if (!promptGptResponse || !userId) {
+    return res.status(400).json({
+      error: 'Prompt GPT response and User ID are required.',
+    });
   }
 
   try {
@@ -305,12 +307,153 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
 
     console.log('Parsed Clothes:', parsedClothes);
 
-    return res.status(200).json(parsedClothes);
+    const { yourClothes, otherClothes } = parsedClothes;
+
+    if (otherClothes && otherClothes.length > 0) {
+      const userResult = await getUserById(userId);
+      if (userResult.status !== 200) {
+        return res.status(userResult.status).json(userResult);
+      }
+
+      const user = userResult.user;
+      const { budget_min, budget_max, gender }: any = user;
+
+      const itemsToScrape = otherClothes.map((item: any) => {
+        const { description, category } = item;
+
+        const queryParts = [
+          gender === 'Male' ? 'Men' : 'Women',
+          category,
+          description,
+        ];
+
+        const rawSearchQuery = queryParts
+          .filter(Boolean)
+          .join(' ')
+          .replace(/[^a-zA-Z0-9\s]/g, '')
+          .trim();
+
+        return { rawSearchQuery };
+      });
+
+      console.log('Initial Search Queries:', itemsToScrape);
+
+      const optimizedQueries = await Promise.all(
+        itemsToScrape.map(async ({ rawSearchQuery }: any) => {
+          const searchQueryOptimizationPrompt = `
+            Refine the following search query for simplicity and accuracy - as if you are searching for an item in an online store. Remove unnecessary words and focus on the key words, don't be too specific (e.g., "Men black sneakers casual"):
+            Input Query: "${rawSearchQuery}"
+          `;
+
+          const gptOptimizationResponse = await openai.chat.completions.create({
+            model: 'gpt-4-turbo',
+            messages: [
+              { role: 'system', content: searchQueryOptimizationPrompt },
+            ],
+          });
+
+          return gptOptimizationResponse?.choices[0]?.message?.content?.trim();
+        })
+      );
+
+      console.log('Optimized Search Queries:', optimizedQueries);
+
+      if (optimizedQueries.length > 0) {
+        const browser = await puppeteer.launch({ headless: true });
+        const searchResults = await Promise.all(
+          optimizedQueries.map(async (searchQuery) => {
+            const encodedQuery = encodeURIComponent(searchQuery);
+            const budgetRange = `price=${budget_min}-${budget_max}`;
+            const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}&${budgetRange}`;
+
+            const page = await browser.newPage();
+            await page.goto(searchUrl, { waitUntil: 'networkidle2' });
+
+            const products = await page.evaluate(() => {
+              const productElements = document.querySelectorAll(
+                'a[data-test-id="productLink"]'
+              );
+              const productData: Array<{
+                name: string;
+                price: string;
+                originalPrice?: string;
+                discount?: string;
+                image: string;
+                productUrl: string;
+                brand: string;
+              }> = [];
+
+              productElements.forEach((element) => {
+                const name =
+                  element
+                    .querySelector('div[data-test-id="productTitle"]')
+                    ?.textContent?.trim() || '';
+                const price =
+                  element
+                    .querySelector(
+                      'div[data-test-id="productPrice"] .font-bold'
+                    )
+                    ?.textContent?.trim() || '';
+                const originalPrice =
+                  element
+                    .querySelector('div[data-test-id="originalPrice"]')
+                    ?.textContent?.trim() || '';
+                const discount =
+                  element
+                    .querySelector('div[data-test-id="discountPercentage"]')
+                    ?.textContent?.trim() || '';
+                const image =
+                  element.querySelector('img')?.getAttribute('src') || '';
+                const productUrl = element.getAttribute('href') || '';
+                const brand =
+                  element
+                    .querySelector('span[data-test-id="productBrandName"]')
+                    ?.textContent?.trim() || '';
+
+                if (name && price && productUrl) {
+                  productData.push({
+                    name,
+                    price,
+                    originalPrice,
+                    discount,
+                    image,
+                    productUrl,
+                    brand,
+                  });
+                }
+              });
+
+              return productData;
+            });
+
+            await page.close();
+
+            return {
+              piece: searchQuery,
+              searchUrl,
+              products: products.slice(0, 3),
+            };
+          })
+        );
+
+        await browser.close();
+
+        return res.status(200).json({
+          yourClothes,
+          otherClothes,
+          searchResults,
+        });
+      }
+    }
+
+    return res.status(200).json({ yourClothes, otherClothes });
   } catch (error: any) {
-    console.error('Error extracting clothes:', error.message);
+    console.error(
+      'Error extracting clothes and scraping items:',
+      error.message
+    );
     return res.status(500).json({
-      error:
-        'An error occurred while extracting clothes from the GPT response.',
+      error: 'An error occurred while extracting clothes and scraping items.',
     });
   }
 });
