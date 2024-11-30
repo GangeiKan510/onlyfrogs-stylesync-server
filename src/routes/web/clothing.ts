@@ -254,6 +254,89 @@ router.post(
   }
 );
 
+router.post('/verify-clothing', async (req: Request, res: Response) => {
+  const { imageUrl } = req.body;
+
+  if (!imageUrl) {
+    return res.status(400).json({ error: 'Image URL is required.' });
+  }
+
+  try {
+    const validateImage = async (url: string) => {
+      try {
+        const response = await axios.head(url);
+        return (
+          response.status === 200 &&
+          response.headers['content-type'].includes('image')
+        );
+      } catch (error: any) {
+        console.error('Image validation failed:', error.message);
+        return false;
+      }
+    };
+
+    const isValidImage = await validateImage(imageUrl);
+    if (!isValidImage) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid or inaccessible image URL.' });
+    }
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        {
+          role: 'user',
+          content: `
+            Analyze the image at the following URL and determine whether it contains a clothing item. Respond only with the following structured JSON:
+            {
+              "isClothing": true // if the image depicts a clothing item,
+              "isClothing": false // if the image does not depict a clothing item
+            }
+            The URL of the image is: ${imageUrl}
+          `,
+        },
+      ],
+    });
+
+    const gptResponse = response.choices[0]?.message?.content || null;
+
+    if (!gptResponse) {
+      return res
+        .status(500)
+        .json({ error: 'No valid response from OpenAI API.' });
+    }
+
+    // Clean and parse GPT response
+    const cleanedResponse = gptResponse
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(cleanedResponse);
+    } catch (error) {
+      console.error('Failed to parse GPT response:', cleanedResponse, error);
+      return res
+        .status(500)
+        .json({ error: 'Failed to parse the response from OpenAI API.' });
+    }
+
+    if (typeof parsedResponse.isClothing === 'boolean') {
+      return res.status(200).json({ isClothing: parsedResponse.isClothing });
+    }
+
+    console.error('Unexpected GPT response:', cleanedResponse);
+    return res
+      .status(500)
+      .json({ error: 'Unexpected response from OpenAI API.' });
+  } catch (error: any) {
+    console.error('Error verifying clothing:', error);
+    return res.status(500).json({ error: 'Failed to process the image.' });
+  }
+});
+
 router.get('/', (req: Request, res: Response) => {
   res.send('Web file router');
 });

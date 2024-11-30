@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/web', assertJwtExist(), webRouter);
+app.use('/web', webRouter);
 
 app.get('/', (req: Request, res: Response) =>
   res.send('OnlyFrogs StyleSync Server')
