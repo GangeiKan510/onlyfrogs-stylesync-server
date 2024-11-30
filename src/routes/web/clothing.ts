@@ -283,18 +283,31 @@ router.post('/verify-clothing', async (req: Request, res: Response) => {
     }
 
     const prompt = `
-      Analyze the image at the following URL and determine if it contains a clothing item.
+You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet.
 
-      URL: ${imageUrl}
+Clothing items include:
+- Tops (e.g., shirts, blouses, t-shirts, jackets, coats)
+- Bottoms (e.g., pants, jeans, shorts, skirts)
+- Dresses
+- Outerwear (e.g., sweaters, hoodies)
+- Footwear (e.g., shoes, boots)
+- Accessories commonly stored in a closet (e.g., hats, belts, scarves)
 
-      Respond only with the following structured JSON:
-      {
-        "isClothing": true // if the image contains is a clothing item,
-        "isClothing": false // if the image does not contain a clothing item
-      }
+Criteria:
+1. The clothing item must be **clear and visually identifiable** in the image.
+2. The clothing item must be **presentable** (not damaged, incomplete, or too ambiguous to determine).
+3. Non-clothing objects or unclear visuals should result in 'false'.
 
-      Ensure your response is valid JSON. Do not include any additional text or comments.
-    `;
+Analyze the image and respond only with the following structured JSON:
+{
+  "isClothing": true // if the image contains a clear and presentable clothing item,
+  "isClothing": false // if the image does not contain a clothing item or is ambiguous
+}
+
+URL: ${imageUrl}
+
+Ensure your response is valid JSON. Do not include any additional text or comments.
+`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
