@@ -364,7 +364,7 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
           optimizedQueries.map(async (searchQuery) => {
             const encodedQuery = encodeURIComponent(searchQuery);
             const budgetRange = `price=${budget_min}-${budget_max}`;
-            const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}&${budgetRange}`;
+            const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}`;
 
             const page = await browser.newPage();
             await page.goto(searchUrl, { waitUntil: 'networkidle2' });
