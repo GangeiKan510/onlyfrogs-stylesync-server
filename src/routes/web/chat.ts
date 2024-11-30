@@ -244,6 +244,77 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/extract-clothes', async (req: Request, res: Response) => {
+  const { promptGptResponse } = req.body;
+
+  if (!promptGptResponse) {
+    return res.status(400).json({ error: 'Prompt GPT response is required.' });
+  }
+
+  try {
+    const responseText = promptGptResponse || '';
+
+    const clothingLines = responseText
+      .split('\n')
+      .filter((line: any) =>
+        line.match(/\*\*(Top|Bottom|Footwear|Accessories):\*\*|Your/i)
+      );
+
+    console.log('Clothing Lines:', clothingLines);
+
+    const parsingPrompt = `
+      Extract all clothing items mentioned in the following lines. Categorize them into two arrays:
+      1. "yourClothes" - Clothing items that start with "Your" or are labeled with "Your" in Markdown links.
+      2. "otherClothes" - Clothing items that are mentioned but do not have "Your".
+
+      For each item, extract:
+      - "description": The full description of the clothing item (e.g., "Black loafers or casual sneakers").
+      - "imageUrl": The URL of the image if present in Markdown format (e.g., ![Your Black turtle neck](URL)).
+      - "category": The category (e.g., "Top", "Bottom", "Footwear", "Accessories") if mentioned.
+
+      Respond with a JSON object:
+      {
+        "yourClothes": [{ "description": "...", "imageUrl": "...", "category": "..." }],
+        "otherClothes": [{ "description": "...", "imageUrl": "...", "category": "..." }]
+      }
+
+      Input:
+      ${JSON.stringify(clothingLines)}
+    `;
+
+    const gptResponse = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [{ role: 'system', content: parsingPrompt }],
+    });
+
+    let parsedClothes;
+    const gptMessageContent = gptResponse.choices[0]?.message?.content || '';
+    const sanitizedContent = gptMessageContent
+      .replace(/```json|```/g, '')
+      .trim();
+
+    try {
+      parsedClothes = JSON.parse(sanitizedContent);
+    } catch (jsonError) {
+      console.error('Error parsing GPT response:', jsonError);
+      console.error('Sanitized Content:', sanitizedContent);
+      return res.status(500).json({
+        error: 'Failed to parse GPT response as JSON.',
+      });
+    }
+
+    console.log('Parsed Clothes:', parsedClothes);
+
+    return res.status(200).json(parsedClothes);
+  } catch (error: any) {
+    console.error('Error extracting clothes:', error.message);
+    return res.status(500).json({
+      error:
+        'An error occurred while extracting clothes from the GPT response.',
+    });
+  }
+});
+
 router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
   const { userId, promptGptResponse } = req.body;
 
