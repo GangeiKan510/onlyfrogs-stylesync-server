@@ -282,19 +282,35 @@ router.post('/verify-clothing', async (req: Request, res: Response) => {
         .json({ error: 'Invalid or inaccessible image URL.' });
     }
 
+    const prompt = `
+      Analyze the image at the following URL and determine if it contains a clothing item.
+
+      URL: ${imageUrl}
+
+      Respond only with the following structured JSON:
+      {
+        "isClothing": true // if the image contains is a clothing item,
+        "isClothing": false // if the image does not contain a clothing item
+      }
+
+      Ensure your response is valid JSON. Do not include any additional text or comments.
+    `;
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: [
         {
           role: 'user',
-          content: `
-            Analyze the image at the following URL and determine whether it contains a clothing item. Respond only with the following structured JSON:
+          content: [
             {
-              "isClothing": true // if the image depicts a clothing item,
-              "isClothing": false // if the image does not depict a clothing item
-            }
-            The URL of the image is: ${imageUrl}
-          `,
+              type: 'text',
+              text: prompt,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: imageUrl, detail: 'high' },
+            },
+          ],
         },
       ],
     });
@@ -327,13 +343,15 @@ router.post('/verify-clothing', async (req: Request, res: Response) => {
       return res.status(200).json({ isClothing: parsedResponse.isClothing });
     }
 
-    console.error('Unexpected GPT response:', cleanedResponse);
+    console.error('Unexpected GPT response structure:', cleanedResponse);
     return res
       .status(500)
-      .json({ error: 'Unexpected response from OpenAI API.' });
+      .json({ error: 'Unexpected response structure from OpenAI API.' });
   } catch (error: any) {
     console.error('Error verifying clothing:', error);
-    return res.status(500).json({ error: 'Failed to process the image.' });
+    const errorMessage =
+      error.response?.data?.error || 'Failed to process the image.';
+    return res.status(500).json({ error: errorMessage });
   }
 });
 
