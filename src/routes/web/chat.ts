@@ -9,6 +9,7 @@ import { sendMessage } from '../../controllers/chat';
 import { getUserById } from '../../controllers/user';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { join } from 'path';
 
 const router = Router();
 
@@ -359,7 +360,16 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
       console.log('Optimized Search Queries:', optimizedQueries);
 
       if (optimizedQueries.length > 0) {
-        const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          executablePath: join(
+            process.env.PUPPETEER_CACHE_DIR as string,
+            'chromium',
+            'chrome-linux',
+            'chrome'
+          ),
+        });
         const searchResults = await Promise.all(
           optimizedQueries.map(async (searchQuery) => {
             const encodedQuery = encodeURIComponent(searchQuery);
@@ -455,203 +465,6 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
     return res.status(500).json({
       error: 'An error occurred while extracting clothes and scraping items.',
     });
-  }
-});
-
-router.post('/scrape-missing-pieces', async (req: Request, res: Response) => {
-  const { userId, promptGptResponse } = req.body;
-
-  if (!userId || !promptGptResponse) {
-    return res
-      .status(400)
-      .json({ error: 'User ID and prompt GPT response are required.' });
-  }
-
-  try {
-    // Fetch user data
-    const userResult = await getUserById(userId);
-    if (userResult.status !== 200) {
-      return res.status(userResult.status).json(userResult);
-    }
-
-    const user = userResult.user;
-    const { budget_min, budget_max, gender }: any = user;
-
-    // Extract outfit lines from GPT response
-    const outfitLines = promptGptResponse.message
-      .split('\n')
-      .filter(
-        (line: string) =>
-          line.startsWith('- **') || line.startsWith('- Generic')
-      );
-
-    console.log('Outfit Lines:', outfitLines);
-
-    // Call GPT-4 Turbo to refine parsing and categorization
-    const gptCategorizationPrompt = `
-      For each line, categorize and extract essential attributes:
-      - "category": "closet" if it's from the user's closet (e.g., starts with "Your").
-                     "generic" if it's a general suggestion (e.g., "white sandals").
-                     "missing" if it's an essential item not in the user's closet.
-      - "itemType": The main item type (e.g., "sandals", "hat").
-      - "colors": A list of associated colors (e.g., ["white", "beige"]).
-      - "context": The context or purpose (e.g., "beach outfit").
-
-      Respond with a JSON array of:
-      { "line": "original line", "category": "closet|generic|missing", "itemType": "type", "colors": [], "context": "context" }
-      
-      Input:
-      ${JSON.stringify(outfitLines)}
-    `;
-
-    const gptResponse = await openai.chat.completions.create({
-      model: 'gpt-4-turbo',
-      messages: [{ role: 'system', content: gptCategorizationPrompt }],
-    });
-
-    const parsedItems = JSON.parse(
-      gptResponse.choices[0]?.message?.content || '[]'
-    );
-
-    console.log('Parsed Items:', parsedItems);
-
-    // Filter items to scrape: only include "generic" and "missing" items
-    const itemsToScrape = parsedItems
-      .filter(
-        (item: any) =>
-          item.category === 'generic' || item.category === 'missing'
-      )
-      .map((item: any) => {
-        const { itemType, colors, context } = item;
-
-        // Build initial search query
-        const queryParts = [
-          gender === 'Male' ? 'Men' : 'Women', // Gender prefix
-          ...(colors || []), // Colors
-          itemType, // Item type
-          context, // Context
-        ];
-
-        const rawSearchQuery = queryParts
-          .filter(Boolean)
-          .join(' ')
-          .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
-          .trim();
-
-        return { rawSearchQuery };
-      });
-
-    console.log('Initial Search Queries:', itemsToScrape);
-
-    // Optimize search queries using GPT-4 Turbo
-    const optimizedQueries = await Promise.all(
-      itemsToScrape.map(async ({ rawSearchQuery }: any) => {
-        const searchQueryOptimizationPrompt = `
-          Refine the following search query for simplicity and accuracy - as if your are searching for an item in an online store. Remove unnecessary words and focus on the key words, don't be too specific (e.g., "Men black sneakers casual"):
-          Input Query: "${rawSearchQuery}"
-        `;
-
-        const gptOptimizationResponse = await openai.chat.completions.create({
-          model: 'gpt-4-turbo',
-          messages: [
-            { role: 'system', content: searchQueryOptimizationPrompt },
-          ],
-        });
-
-        return gptOptimizationResponse?.choices[0]?.message?.content?.trim();
-      })
-    );
-
-    console.log('Optimized Search Queries:', optimizedQueries);
-
-    if (optimizedQueries.length === 0) {
-      return res.status(200).json({ message: 'No items to scrape.' });
-    }
-
-    // Prepare scraping queries for optimized queries
-    const browser = await puppeteer.launch({ headless: true });
-    const searchResults = await Promise.all(
-      optimizedQueries.map(async (searchQuery) => {
-        const encodedQuery = encodeURIComponent(searchQuery);
-        const budgetRange = `price=${budget_min}-${budget_max}`;
-        const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}&${budgetRange}`;
-
-        const page = await browser.newPage();
-        await page.goto(searchUrl, { waitUntil: 'networkidle2' });
-
-        const products = await page.evaluate(() => {
-          const productElements = document.querySelectorAll(
-            'a[data-test-id="productLink"]'
-          );
-          const productData: Array<{
-            name: string;
-            price: string;
-            originalPrice?: string;
-            discount?: string;
-            image: string;
-            productUrl: string;
-            brand: string;
-          }> = [];
-
-          productElements.forEach((element) => {
-            const name =
-              element
-                .querySelector('div[data-test-id="productTitle"]')
-                ?.textContent?.trim() || '';
-            const price =
-              element
-                .querySelector('div[data-test-id="productPrice"] .font-bold')
-                ?.textContent?.trim() || '';
-            const originalPrice =
-              element
-                .querySelector('div[data-test-id="originalPrice"]')
-                ?.textContent?.trim() || '';
-            const discount =
-              element
-                .querySelector('div[data-test-id="discountPercentage"]')
-                ?.textContent?.trim() || '';
-            const image =
-              element.querySelector('img')?.getAttribute('src') || '';
-            const productUrl = element.getAttribute('href') || '';
-            const brand =
-              element
-                .querySelector('span[data-test-id="productBrandName"]')
-                ?.textContent?.trim() || '';
-
-            if (name && price && productUrl) {
-              productData.push({
-                name,
-                price,
-                originalPrice,
-                discount,
-                image,
-                productUrl,
-                brand,
-              });
-            }
-          });
-
-          return productData;
-        });
-
-        await page.close();
-
-        return {
-          piece: searchQuery,
-          searchUrl,
-          products: products.slice(0, 3),
-        }; // Limit to top 3 results
-      })
-    );
-
-    await browser.close();
-
-    return res.status(200).json({ searchResults });
-  } catch (error: any) {
-    console.error('Error scraping for items:', error.message);
-    return res
-      .status(500)
-      .json({ error: 'An error occurred while processing the request.' });
   }
 });
 
