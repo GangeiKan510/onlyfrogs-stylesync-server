@@ -5,7 +5,7 @@ set -o errexit
 echo "Installing dependencies..."
 npm install
 
-# Run Prisma and build the project
+# Generate Prisma Client and build the project
 echo "Running Prisma generate and TypeScript build..."
 npx prisma generate
 rimraf dist && tsc --noEmit false && tsc-alias
@@ -14,14 +14,15 @@ rimraf dist && tsc --noEmit false && tsc-alias
 PUPPETEER_CACHE_DIR="/opt/render/project/puppeteer"
 
 # Handle Puppeteer cache and Chromium installation
-echo "Handling Puppeteer cache..."
+echo "Handling Puppeteer cache and installing Chromium..."
 if [[ ! -f "$PUPPETEER_CACHE_DIR/chromium/chrome-linux64/chrome" ]]; then
   echo "Chromium not found. Installing Chromium..."
   mkdir -p "$PUPPETEER_CACHE_DIR"
   npx puppeteer install
+  cp -R "$XDG_CACHE_HOME/puppeteer/" "$PUPPETEER_CACHE_DIR"
 else
-  echo "Chromium already installed. Copying Puppeteer cache..."
-  cp -R "$PUPPETEER_CACHE_DIR" "$XDG_CACHE_HOME/puppeteer/"
+  echo "Using cached Chromium..."
+  cp -R "$PUPPETEER_CACHE_DIR" "$XDG_CACHE_HOME"
 fi
 
 echo "Build complete!"

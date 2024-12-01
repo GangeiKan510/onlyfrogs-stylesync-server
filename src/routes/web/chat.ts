@@ -361,12 +361,8 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
 
       if (optimizedQueries.length > 0) {
         const browser = await puppeteer.launch({
-          executablePath: join(
-            process.env.PUPPETEER_CACHE_DIR || '/opt/render/project/puppeteer',
-            'chromium',
-            'chrome-linux64',
-            'chrome'
-          ),
+          executablePath:
+            '/opt/render/project/puppeteer/chromium/chrome-linux64/chrome',
           args: ['--no-sandbox', '--disable-setuid-sandbox'],
           headless: true,
         });
