@@ -15,22 +15,23 @@ PUPPETEER_CACHE_DIR="/opt/render/project/puppeteer"
 
 # Handle Puppeteer cache and Chromium installation
 echo "Handling Puppeteer cache and installing Chromium..."
-if [[ ! -d "$PUPPETEER_CACHE_DIR/chromium" ]]; then
-  echo "Chromium not found. Installing Chromium..."
-  mkdir -p "$PUPPETEER_CACHE_DIR"
-  npx puppeteer install --path "$PUPPETEER_CACHE_DIR"
+mkdir -p "$PUPPETEER_CACHE_DIR"
 
-  echo "Installed Chromium contents:"
+# Install Chromium
+npx puppeteer install --path "$PUPPETEER_CACHE_DIR"
+
+# Verify installation
+echo "Verifying Chromium installation..."
+if [[ -d "$PUPPETEER_CACHE_DIR/chromium" ]]; then
+  echo "Chromium installed successfully."
   ls -al "$PUPPETEER_CACHE_DIR/chromium"
 else
-  echo "Using cached Chromium..."
-  cp -R "$PUPPETEER_CACHE_DIR" "$XDG_CACHE_HOME"
+  echo "Chromium installation failed. Reinstalling..."
+  npx puppeteer install --path "$PUPPETEER_CACHE_DIR"
 fi
 
-# Log directory structure for debugging
-echo "Directory structure of Puppeteer cache:"
+# Final directory structure verification
+echo "Final Puppeteer cache directory structure:"
 ls -al "$PUPPETEER_CACHE_DIR"
-ls -al "$PUPPETEER_CACHE_DIR/chromium"
-ls -al "$PUPPETEER_CACHE_DIR/chromium/chrome-linux64"
 
 echo "Build complete!"
