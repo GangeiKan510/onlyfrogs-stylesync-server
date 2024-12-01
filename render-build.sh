@@ -14,13 +14,13 @@ echo "Handling Puppeteer cache..."
 export PUPPETEER_CACHE_DIR="/opt/render/project/puppeteer"
 
 # Store or pull Puppeteer cache with the build cache
-if [[ ! -d $PUPPETEER_CACHE_DIR ]]; then 
-  echo "Copying Puppeteer cache from build cache..."
-  mkdir -p $PUPPETEER_CACHE_DIR
-  cp -R $XDG_CACHE_HOME/puppeteer/ $PUPPETEER_CACHE_DIR || true
-else 
-  echo "Storing Puppeteer cache in build cache..."
-  cp -R $PUPPETEER_CACHE_DIR $XDG_CACHE_HOME || true
+if [[ ! -d "$PUPPETEER_CACHE_DIR" ]]; then
+  echo "Copying Puppeteer Cache from Build Cache"
+  cp -R "$XDG_CACHE_HOME/puppeteer/" "$PUPPETEER_CACHE_DIR"
+else
+  echo "Installing Chromium..."
+  npx puppeteer install
+  cp -R "$PUPPETEER_CACHE_DIR" "$XDG_CACHE_HOME"
 fi
 
 echo "Installing Chromium for Puppeteer..."
