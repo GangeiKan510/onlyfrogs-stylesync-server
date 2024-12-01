@@ -1,29 +1,27 @@
 #!/usr/bin/env bash
-# Exit on errors
 set -o errexit
 
+# Install dependencies
 echo "Installing dependencies..."
 npm install
 
-echo "Running build script..."
-rimraf dist && tsc --noEmit false && tsc-alias && prisma generate
-
-echo "Handling Puppeteer cache..."
+# Run Prisma and build the project
+echo "Running Prisma generate and TypeScript build..."
+npx prisma generate
+rimraf dist && tsc --noEmit false && tsc-alias
 
 # Define Puppeteer cache directory
-export PUPPETEER_CACHE_DIR="/opt/render/project/puppeteer"
+PUPPETEER_CACHE_DIR="/opt/render/project/puppeteer"
 
-# Store or pull Puppeteer cache with the build cache
-if [[ ! -d "$PUPPETEER_CACHE_DIR" ]]; then
-  echo "Copying Puppeteer Cache from Build Cache"
-  cp -R "$XDG_CACHE_HOME/puppeteer/" "$PUPPETEER_CACHE_DIR"
-else
-  echo "Installing Chromium..."
+# Handle Puppeteer cache and Chromium installation
+echo "Handling Puppeteer cache..."
+if [[ ! -f "$PUPPETEER_CACHE_DIR/chromium/chrome-linux64/chrome" ]]; then
+  echo "Chromium not found. Installing Chromium..."
+  mkdir -p "$PUPPETEER_CACHE_DIR"
   npx puppeteer install
-  cp -R "$PUPPETEER_CACHE_DIR" "$XDG_CACHE_HOME"
+else
+  echo "Chromium already installed. Copying Puppeteer cache..."
+  cp -R "$PUPPETEER_CACHE_DIR" "$XDG_CACHE_HOME/puppeteer/"
 fi
-
-echo "Installing Chromium for Puppeteer..."
-npx puppeteer browsers install chrome
 
 echo "Build complete!"
