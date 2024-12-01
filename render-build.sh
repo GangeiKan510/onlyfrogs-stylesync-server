@@ -11,19 +11,27 @@ npx prisma generate
 rimraf dist && tsc --noEmit false && tsc-alias
 
 # Define Puppeteer cache directory
-export PUPPETEER_CACHE_DIR="/opt/render/project/puppeteer"
+PUPPETEER_CACHE_DIR="/opt/render/project/puppeteer"
+
+# Handle Puppeteer cache and Chromium installation
+echo "Handling Puppeteer cache and installing Chromium..."
+mkdir -p "$PUPPETEER_CACHE_DIR"
 
 # Install Chromium
-echo "Installing Chromium..."
 npx puppeteer install --path "$PUPPETEER_CACHE_DIR"
 
-# Verify Chromium installation
-CHROMIUM_PATH="$PUPPETEER_CACHE_DIR/chromium/chrome-linux64/chrome"
-if [[ -f "$CHROMIUM_PATH" ]]; then
-  echo "Chromium installed successfully at $CHROMIUM_PATH."
+# Verify installation
+echo "Verifying Chromium installation..."
+if [[ -d "$PUPPETEER_CACHE_DIR/chromium" ]]; then
+  echo "Chromium installed successfully."
+  ls -al "$PUPPETEER_CACHE_DIR/chromium"
 else
-  echo "Error: Chromium not found at $CHROMIUM_PATH."
-  exit 1
+  echo "Chromium installation failed. Reinstalling..."
+  npx puppeteer install --path "$PUPPETEER_CACHE_DIR"
 fi
+
+# Final directory structure verification
+echo "Final Puppeteer cache directory structure:"
+ls -al "$PUPPETEER_CACHE_DIR"
 
 echo "Build complete!"
