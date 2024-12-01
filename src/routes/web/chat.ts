@@ -9,7 +9,6 @@ import { sendMessage } from '../../controllers/chat';
 import { getUserById } from '../../controllers/user';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { join } from 'path';
 
 const router = Router();
 
@@ -360,12 +359,7 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
       console.log('Optimized Search Queries:', optimizedQueries);
 
       if (optimizedQueries.length > 0) {
-        const browser = await puppeteer.launch({
-          executablePath:
-            '/opt/render/project/puppeteer/chromium/chrome-linux64/chrome',
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-          headless: true,
-        });
+        const browser = await puppeteer.launch({ headless: true });
         const searchResults = await Promise.all(
           optimizedQueries.map(async (searchQuery) => {
             const encodedQuery = encodeURIComponent(searchQuery);
