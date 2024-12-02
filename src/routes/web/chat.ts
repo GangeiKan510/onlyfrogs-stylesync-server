@@ -359,7 +359,19 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
       console.log('Optimized Search Queries:', optimizedQueries);
 
       if (optimizedQueries.length > 0) {
-        const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer.launch({
+          args: [
+            '--disable-setuid-sandbox',
+            '--no-sandbox',
+            '--single-process',
+            '--no-zygote',
+          ],
+          executablePath:
+            process.env.NODE_ENV === 'production'
+              ? process.env.PUPPETEER_EXECUTABLE_PATH
+              : puppeteer.executablePath(),
+          headless: true,
+        });
         const searchResults = await Promise.all(
           optimizedQueries.map(async (searchQuery) => {
             const encodedQuery = encodeURIComponent(searchQuery);
