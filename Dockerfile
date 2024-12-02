@@ -6,6 +6,6 @@ ENV PUPPETEER_SKIP_CHROMIUM=true \
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm ci && rimraf dist && tsc --noEmit false && tsc-alias && prisma generate
+RUN npm ci
 COPY . .
 CMD ["node", "dist/index.js"]
