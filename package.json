@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "type-check": "tsc",
-    "build": "rimraf dist && tsc --noEmit false && tsc-alias && prisma generate",
+    "build": "rimraf dist && tsc && tsc-alias && prisma generate",
     "start": "node dist/index.js",
     "dev": "NODE_ENV=development tsx watch src/index.ts",
     "format": "npx prettier --write .",
@@ -16,7 +16,7 @@
     "precommit": "npm run lint && npm run prettier && npm run build && lint-staged",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "deploy": "npm run build && npm run start",
-    "postinstall": "prisma generate"
+   "postinstall": "prisma generate --schema=prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
