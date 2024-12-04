@@ -379,7 +379,7 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
             const searchUrl = `https://www.zalora.com.ph/search?q=${encodedQuery}`;
 
             const page = await browser.newPage();
-            await page.goto(searchUrl, { waitUntil: 'networkidle2' });
+            await page.goto(searchUrl, { timeout: 0 });
 
             const products = await page.evaluate(() => {
               const productElements = document.querySelectorAll(
