@@ -443,7 +443,7 @@ router.post('/extract-clothes', async (req: Request, res: Response) => {
             return {
               piece: searchQuery,
               searchUrl,
-              products: products.slice(0, 3),
+              products: products.slice(0, 1),
             };
           })
         );
