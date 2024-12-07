@@ -364,3 +364,36 @@ export const updatePrioritizePreferences = async (
     };
   }
 };
+
+export const updateSkinToneDetails = async (
+  userId: string,
+  skinToneClassification: string,
+  complements: string[],
+  season: string,
+  subSeason: string
+) => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        skin_tone_classification: skinToneClassification,
+        skin_tone_complements: complements,
+        season: season,
+        sub_season: subSeason,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Skin tone analysis updated successfully',
+      user: updatedUser,
+    };
+  } catch (error: any) {
+    console.error('Error updating skin tone analysis:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
