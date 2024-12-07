@@ -158,6 +158,7 @@ export const updateUser = async (
         style_preferences: updates.style_preferences ?? undefined,
         favorite_colors: updates.favorite_colors ?? undefined,
         preferred_brands: updates.preferred_brands ?? undefined,
+        preferred_style: updates.preferred_style ?? undefined,
         budget_min: updates.budget_min ?? undefined,
         budget_max: updates.budget_max ?? undefined,
       },
