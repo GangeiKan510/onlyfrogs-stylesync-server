@@ -44,6 +44,7 @@ export interface UpdateUserProps {
   style_preferences?: string[];
   favorite_colors?: string[];
   preferred_brands?: string[];
+  preferred_style?: string[];
   budget_min?: number | null;
   budget_max?: number | null;
 }
