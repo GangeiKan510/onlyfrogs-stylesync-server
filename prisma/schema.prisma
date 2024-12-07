@@ -27,6 +27,7 @@ model User {
   style_preferences        String[]
   favorite_colors          String[]
   preferred_brands         String[]
+  preferred_style          String[]
   budget_min               Int?
   budget_max               Int?
   location                 Json?
