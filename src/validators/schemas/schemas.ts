@@ -158,3 +158,20 @@ export const GetClosetesByIdRequestBodySchema = z.object({
 export const ChatSessionSchema = z.object({
   userId: z.string().uuid('User ID must be a valid UUID'),
 });
+
+export const UpdateUserPreferencesSchema = z.object({
+  id: z.string().nonempty({ message: 'User ID is required' }),
+  brands: z.array(z.string()).nonempty({ message: 'Brands are required' }),
+  budgetRange: z.object({
+    min: z
+      .number()
+      .min(0, { message: 'Budget minimum must be a positive number' }),
+    max: z
+      .number()
+      .min(0, { message: 'Budget maximum must be a positive number' }),
+  }),
+  favoriteColors: z
+    .array(z.string())
+    .nonempty({ message: 'Favorite colors are required' }),
+  styles: z.array(z.string()).nonempty({ message: 'Styles are required' }),
+});

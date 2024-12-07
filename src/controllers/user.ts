@@ -397,3 +397,39 @@ export const updateSkinToneDetails = async (
     };
   }
 };
+
+export const updateUserPreferences = async (
+  userId: string,
+  brands: string[],
+  budgetRange: { min: number; max: number },
+  favoriteColors: string[],
+  styles: string[]
+) => {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        preferred_brands: brands,
+        budget_min: budgetRange.min,
+        budget_max: budgetRange.max,
+        favorite_colors: favoriteColors,
+        style_preferences: styles,
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'User preferences updated successfully',
+      user: updatedUser,
+    };
+  } catch (error: any) {
+    console.error('Error updating user preferences:', error);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
