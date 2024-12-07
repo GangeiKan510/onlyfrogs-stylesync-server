@@ -9,6 +9,7 @@ import {
   updatePrioritizePreferences,
   updateConsiderSkinTone,
   updateSkinToneDetails,
+  updateUserPreferences,
 } from '../../controllers/user';
 import {
   CreateUserSchema,
@@ -16,6 +17,7 @@ import {
   UpdateSkinToneAnalysisSchema,
   UpdateUserBodyType,
   UpdateUserNameSchema,
+  UpdateUserPreferencesSchema,
   UpdateUserSchema,
 } from '../../validators/schemas/schemas';
 import { validate } from '../../validators/validate';
@@ -227,6 +229,32 @@ router.post(
       });
     } catch (error) {
       console.error('Error updating skin tone analysis:', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-preferences',
+  validate(UpdateUserPreferencesSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { id, brands, budgetRange, favoriteColors, styles } = req.body;
+
+      const result = await updateUserPreferences(
+        id,
+        brands,
+        budgetRange,
+        favoriteColors,
+        styles
+      );
+
+      res.status(result.status).json({
+        message: result.message,
+        user: result.user,
+      });
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
       next(error);
     }
   }
