@@ -42,6 +42,18 @@ export const UpdateWornDateSchema = z.object({
   clothing_id: z.string().nonempty({ message: 'Clothing ID is required' }),
 });
 
+export const UpdateSkinToneAnalysisSchema = z.object({
+  id: z.string().nonempty({ message: 'User ID is required' }),
+  skin_tone_classification: z
+    .string()
+    .nonempty({ message: 'Skin tone classification is required' }),
+  skin_tone_complements: z
+    .array(z.string())
+    .nonempty({ message: 'Skin tone complements are required' }),
+  season: z.string().nonempty({ message: 'Season is required' }),
+  sub_season: z.string().nonempty({ message: 'Sub-season is required' }),
+});
+
 export const CreateUserSchema = z.object({
   first_name: z.string().nonempty({ message: 'First name is required' }),
   last_name: z.string().nonempty({ message: 'Last name is required' }),

@@ -8,10 +8,12 @@ import {
   updateBodyType,
   updatePrioritizePreferences,
   updateConsiderSkinTone,
+  updateSkinToneDetails,
 } from '../../controllers/user';
 import {
   CreateUserSchema,
   UpdatePersonalInformationSchema,
+  UpdateSkinToneAnalysisSchema,
   UpdateUserBodyType,
   UpdateUserNameSchema,
   UpdateUserSchema,
@@ -193,6 +195,38 @@ router.post(
       });
     } catch (error) {
       console.error('Error updating "Prioritize Preferences":', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/update-skin-tone-analysis',
+  validate(UpdateSkinToneAnalysisSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const {
+        id,
+        skin_tone_classification,
+        skin_tone_complements,
+        season,
+        sub_season,
+      } = req.body;
+
+      const result = await updateSkinToneDetails(
+        id,
+        skin_tone_classification,
+        skin_tone_complements,
+        season,
+        sub_season
+      );
+
+      res.status(result.status).json({
+        message: result.message,
+        user: result.user,
+      });
+    } catch (error) {
+      console.error('Error updating skin tone analysis:', error);
       next(error);
     }
   }
