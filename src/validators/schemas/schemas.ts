@@ -127,7 +127,7 @@ export const UpdatePersonalInformationSchema = z.object({
     .refine(
       (value) =>
         value === undefined ||
-        ['Male', 'Female', 'Other', 'Prefer not to say'].includes(value),
+        ['Male', 'Female', 'Non-Binary', 'Rather Not Say'].includes(value),
       {
         message:
           'Gender must be one of: Male, Female, Other, Prefer not to say',
