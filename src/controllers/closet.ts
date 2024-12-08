@@ -35,12 +35,15 @@ export const getAllClosetsByUser = async (userId: string) => {
 
 export const deleteCloset = async (closetId: string) => {
   try {
+    await prisma.clothing.deleteMany({
+      where: {
+        closet_id: closetId,
+      },
+    });
+
     const deletedCloset = await prisma.closet.delete({
       where: {
         id: closetId,
-      },
-      include: {
-        clothes: true,
       },
     });
 
