@@ -32,3 +32,21 @@ export const getAllClosetsByUser = async (userId: string) => {
     throw error;
   }
 };
+
+export const deleteCloset = async (closetId: string) => {
+  try {
+    const deletedCloset = await prisma.closet.delete({
+      where: {
+        id: closetId,
+      },
+      include: {
+        clothes: true,
+      },
+    });
+
+    return deletedCloset;
+  } catch (error) {
+    console.error('Error deleting closet:', error);
+    throw error;
+  }
+};

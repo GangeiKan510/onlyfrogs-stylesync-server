@@ -175,3 +175,7 @@ export const UpdateUserPreferencesSchema = z.object({
     .nonempty({ message: 'Favorite colors are required' }),
   styles: z.array(z.string()).nonempty({ message: 'Styles are required' }),
 });
+
+export const DeleteClosetSchema = z.object({
+  closetId: z.string(),
+});
