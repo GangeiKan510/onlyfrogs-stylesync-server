@@ -4,11 +4,13 @@ import {
   ClosetSchema,
   DeleteClosetSchema,
   GetClosetesByIdRequestBodySchema,
+  UpdateClosetDetailsSchema,
 } from '../../validators/schemas/schemas';
 import {
   createCloset,
   deleteCloset,
   getAllClosetsByUser,
+  updateClosetDetails,
 } from '../../controllers/closet';
 
 const router = Router();
@@ -43,6 +45,36 @@ router.post(
     } catch (err) {
       console.error(err);
       next(err);
+    }
+  }
+);
+
+router.post(
+  '/update-closet',
+  validate(UpdateClosetDetailsSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { closetId, name, description } = req.body;
+
+      if (!closetId || !name) {
+        return res.status(400).json({
+          error: 'Closet ID and name are required',
+        });
+      }
+
+      const updatedCloset = await updateClosetDetails(
+        closetId,
+        name,
+        description || ''
+      );
+
+      res.status(200).json({
+        message: 'Closet details updated successfully',
+        data: updatedCloset,
+      });
+    } catch (error) {
+      console.error('Error updating closet:', error);
+      next(error);
     }
   }
 );

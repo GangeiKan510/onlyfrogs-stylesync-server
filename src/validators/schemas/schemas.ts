@@ -179,3 +179,9 @@ export const UpdateUserPreferencesSchema = z.object({
 export const DeleteClosetSchema = z.object({
   closetId: z.string(),
 });
+
+export const UpdateClosetDetailsSchema = z.object({
+  closetId: z.string(),
+  name: z.string().min(1, 'Name is required').max(20, 'Name too long'),
+  description: z.string().max(30, 'Description too long').optional(),
+});

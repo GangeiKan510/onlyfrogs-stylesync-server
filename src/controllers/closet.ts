@@ -50,3 +50,21 @@ export const deleteCloset = async (closetId: string) => {
     throw error;
   }
 };
+
+export const updateClosetDetails = async (
+  closetId: string,
+  name: string,
+  description: string
+) => {
+  try {
+    const updatedCloset = await prisma.closet.update({
+      where: { id: closetId },
+      data: { name, description },
+    });
+
+    return updatedCloset;
+  } catch (error) {
+    console.error('Error updating closet details:', error);
+    throw error;
+  }
+};
