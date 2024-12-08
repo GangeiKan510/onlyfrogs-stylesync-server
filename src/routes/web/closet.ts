@@ -2,9 +2,14 @@ import { Request, Response, Router } from 'express';
 import { validate } from '../../validators/validate';
 import {
   ClosetSchema,
+  DeleteClosetSchema,
   GetClosetesByIdRequestBodySchema,
 } from '../../validators/schemas/schemas';
-import { createCloset, getAllClosetsByUser } from '../../controllers/closet';
+import {
+  createCloset,
+  deleteCloset,
+  getAllClosetsByUser,
+} from '../../controllers/closet';
 
 const router = Router();
 
@@ -38,6 +43,31 @@ router.post(
     } catch (err) {
       console.error(err);
       next(err);
+    }
+  }
+);
+
+router.post(
+  '/delete-closet',
+  validate(DeleteClosetSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { closetId } = req.body;
+
+      if (!closetId) {
+        return res.status(400).json({ error: 'Closet ID is required' });
+      }
+
+      const deletedCloset = await deleteCloset(closetId);
+
+      res.status(200).json({
+        message:
+          'Closet and its associated clothing items deleted successfully',
+        data: deletedCloset,
+      });
+    } catch (error) {
+      console.error('Error deleting closet:', error);
+      next(error);
     }
   }
 );
