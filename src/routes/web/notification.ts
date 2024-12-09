@@ -1,6 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { validate } from '../../validators/validate';
-import { markNotificationAsRead } from '../../controllers/notification';
+import {
+  deleteAllNotifications,
+  markNotificationAsRead,
+} from '../../controllers/notification';
 import { ReadNotificationSchema } from '../../validators/schemas/schemas';
 
 const router = Router();
@@ -24,6 +27,29 @@ router.post(
       });
     } catch (error) {
       console.error('Error in /read-notification route:', error);
+      next(error);
+    }
+  }
+);
+
+router.delete(
+  '/delete-all-notifications',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      const deletedNotifications = await deleteAllNotifications(userId);
+
+      res.status(200).json({
+        message: 'All notifications deleted successfully',
+        data: deletedNotifications,
+      });
+    } catch (error) {
+      console.error('Error in /delete-all-notifications route:', error);
       next(error);
     }
   }

@@ -40,3 +40,18 @@ export const markNotificationAsRead = async (notificationId: string) => {
     throw error;
   }
 };
+
+export const deleteAllNotifications = async (userId: string) => {
+  try {
+    const deletedNotifications = await prisma.notification.deleteMany({
+      where: {
+        user_id: userId,
+      },
+    });
+
+    return deletedNotifications;
+  } catch (error) {
+    console.error('Error deleting all notifications:', error);
+    throw error;
+  }
+};
