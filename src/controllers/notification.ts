@@ -22,3 +22,21 @@ export const createNotification = async (body: NotificationProps) => {
     throw error;
   }
 };
+
+export const markNotificationAsRead = async (notificationId: string) => {
+  try {
+    const updatedNotification = await prisma.notification.update({
+      where: {
+        id: notificationId,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    return updatedNotification;
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    throw error;
+  }
+};
