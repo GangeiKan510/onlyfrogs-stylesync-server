@@ -33,12 +33,13 @@ model User {
   location                 Json?
   profile_url              String?
 
-  clothes     Clothing[]
-  closets     Closet[]
-  fits        Fit[]
-  chat_ession ChatSession?
-
+  clothes        Clothing[]
+  closets        Closet[]
+  fits           Fit[]
+  chat_ession    ChatSession?
   promptSettings PromptSettings?
+
+  notifications Notification[]
 }
 
 model PromptSettings {
@@ -138,4 +139,14 @@ model Message {
 
   chat_session_id String
   chat_session    ChatSession @relation(fields: [chat_session_id], references: [id])
+}
+
+model Notification {
+  id        String   @id @unique @default(uuid())
+  user_id   String
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type      String // INFO", "WARNING", "SUCCESS", "ERROR"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
