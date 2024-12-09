@@ -2,6 +2,7 @@ import { UpdateUserProps, UserProps } from '../types/user';
 import prisma from './db';
 import { createChatSession } from './chat';
 import { Prisma } from '@prisma/client';
+import { createNotification } from './notification';
 
 export const getUserByEmail = async (email: string) => {
   try {
@@ -16,6 +17,7 @@ export const getUserByEmail = async (email: string) => {
             worn: true,
           },
         },
+        notifications: true,
         promptSettings: true,
       },
     });
@@ -116,6 +118,12 @@ export const createUser = async (body: UserProps) => {
     if (chatSessionResult.status !== 201 && chatSessionResult.status !== 200) {
       throw new Error('Failed to create chat session for the new user');
     }
+
+    await createNotification({
+      user_id: newUser.id,
+      type: 'INFO',
+      content: `Welcome to StylSync, ${newUser.first_name}! We're excited to have you onboard.`,
+    });
 
     return {
       ...newUser,
