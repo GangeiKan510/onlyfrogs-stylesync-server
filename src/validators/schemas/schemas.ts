@@ -185,3 +185,7 @@ export const UpdateClosetDetailsSchema = z.object({
   name: z.string().min(1, 'Name is required').max(20, 'Name too long'),
   description: z.string().max(30, 'Description too long').optional(),
 });
+
+export const ReadNotificationSchema = z.object({
+  notificationId: z.string(),
+});
