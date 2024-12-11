@@ -103,9 +103,10 @@ model Closet {
 }
 
 model Fit {
-  id     String @id @unique @default(uuid())
-  serial Int    @unique @default(autoincrement())
-  name   String
+  id            String  @id @unique @default(uuid())
+  serial        Int     @unique @default(autoincrement())
+  name          String
+  thumbnail_url String?
 
   user_id String
   user    User       @relation(fields: [user_id], references: [id])
