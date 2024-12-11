@@ -199,3 +199,11 @@ export const FitSchema = z.object({
 export const DeleteFitSchema = z.object({
   fitId: z.string().nonempty('Fit ID is required'),
 });
+
+export const RenameFitSchema = z.object({
+  fitId: z.string().min(1, 'Fit ID is required'),
+  newName: z
+    .string()
+    .min(1, 'New name must be at least 1 character long')
+    .max(255, 'New name cannot exceed 255 characters'),
+});
