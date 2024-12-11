@@ -19,6 +19,7 @@ export const getUserByEmail = async (email: string) => {
         },
         notifications: true,
         promptSettings: true,
+        fits: true,
       },
     });
 
