@@ -22,14 +22,20 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post(
   '/create-fit',
   upload.single('thumbnail'),
-  validate(FitSchema),
   async (req: Request, res: Response, next) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'Thumbnail file is required.' });
       }
 
-      const fitData = req.body;
+      const { name, user_id, piece_ids } = req.body;
+
+      console.log('Received body:', req.body);
+
+      if (!name || !user_id || !piece_ids) {
+        return res.status(400).json({ error: 'Missing required fields.' });
+      }
+
       const dateTime = new Date().toISOString();
       const storageRef = ref(
         storage,
@@ -38,14 +44,23 @@ router.post(
 
       const metadata = { contentType: req.file.mimetype };
 
+      console.log('Uploading to Firebase Storage...');
       const snapshot = await uploadBytesResumable(
         storageRef,
         req.file.buffer,
         metadata
       );
       const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log('File uploaded. URL:', downloadURL);
 
-      fitData.thumbnail_url = downloadURL;
+      const fitData = {
+        name,
+        user_id,
+        piece_ids: Array.isArray(piece_ids) ? piece_ids : [piece_ids],
+        thumbnail_url: downloadURL,
+      };
+
+      console.log('Creating fit with data:', fitData);
 
       const newFit = await createFit(fitData);
 
