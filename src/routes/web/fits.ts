@@ -1,7 +1,11 @@
 import { Request, Response, Router } from 'express';
 import { validate } from '../../validators/validate';
-import { FitSchema, DeleteFitSchema } from '../../validators/schemas/schemas';
-import { createFit, deleteFit } from '../../controllers/fits';
+import {
+  FitSchema,
+  DeleteFitSchema,
+  RenameFitSchema,
+} from '../../validators/schemas/schemas';
+import { createFit, deleteFit, renameFit } from '../../controllers/fits';
 import { initializeApp } from 'firebase/app';
 import {
   getStorage,
@@ -70,6 +74,32 @@ router.post(
       });
     } catch (error) {
       console.error('Error creating fit:', error);
+      next(error);
+    }
+  }
+);
+
+router.post(
+  '/rename-fit',
+  validate(RenameFitSchema),
+  async (req: Request, res: Response, next) => {
+    try {
+      const { fitId, newName } = req.body;
+
+      if (!fitId || !newName) {
+        return res
+          .status(400)
+          .json({ error: 'Fit ID and new name are required' });
+      }
+
+      const renamedFit = await renameFit(fitId, newName);
+
+      res.status(200).json({
+        message: 'Fit renamed successfully',
+        data: renamedFit,
+      });
+    } catch (error) {
+      console.error('Error renaming fit:', error);
       next(error);
     }
   }

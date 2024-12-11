@@ -24,6 +24,20 @@ export const createFit = async (body: FitProps) => {
   }
 };
 
+export const renameFit = async (fitId: string, newName: string) => {
+  try {
+    const updatedFit = await prisma.fit.update({
+      where: { id: fitId },
+      data: { name: newName },
+    });
+
+    return updatedFit;
+  } catch (error) {
+    console.error('Error renaming fit:', error);
+    throw error;
+  }
+};
+
 export const deleteFit = async (fitId: string) => {
   try {
     const deletedFit = await prisma.fit.delete({
