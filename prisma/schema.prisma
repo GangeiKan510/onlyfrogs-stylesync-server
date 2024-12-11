@@ -74,10 +74,6 @@ model Clothing {
   closet_id String
   closet    Closet @relation(fields: [closet_id], references: [id])
 
-  fits_top    Fit[] @relation("TopFit")
-  fits_bottom Fit[] @relation("BottomFit")
-  fits_shoes  Fit[] @relation("ShoesFit")
-
   worn Worn[]
 }
 
@@ -105,19 +101,13 @@ model Closet {
 }
 
 model Fit {
-  id     String @id @unique @default(uuid())
-  serial Int    @unique @default(autoincrement())
-
-  top_id    String
-  bottom_id String
-  shoes_id  String
+  id     String   @id @unique @default(uuid())
+  serial Int      @unique @default(autoincrement())
+  name   String
+  pieces String[]
 
   user_id String
   user    User   @relation(fields: [user_id], references: [id])
-
-  top    Clothing @relation("TopFit", fields: [top_id], references: [id])
-  bottom Clothing @relation("BottomFit", fields: [bottom_id], references: [id])
-  shoes  Clothing @relation("ShoesFit", fields: [shoes_id], references: [id])
 }
 
 model ChatSession {
