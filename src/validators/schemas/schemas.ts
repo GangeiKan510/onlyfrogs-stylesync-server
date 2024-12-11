@@ -189,3 +189,14 @@ export const UpdateClosetDetailsSchema = z.object({
 export const ReadNotificationSchema = z.object({
   notificationId: z.string(),
 });
+
+export const FitSchema = z.object({
+  name: z.string().nonempty('Name is required'),
+  thumbnail_url: z.string().optional(),
+  user_id: z.string().nonempty('User ID is required'),
+  piece_ids: z.array(z.string().nonempty('Clothing ID cannot be empty')),
+});
+
+export const DeleteFitSchema = z.object({
+  fitId: z.string().nonempty('Fit ID is required'),
+});
