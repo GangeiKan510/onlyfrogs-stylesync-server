@@ -192,7 +192,6 @@ export const ReadNotificationSchema = z.object({
 
 export const FitSchema = z.object({
   name: z.string().nonempty('Name is required'),
-  thumbnail_url: z.string().optional(),
   user_id: z.string().nonempty('User ID is required'),
   piece_ids: z.array(z.string().nonempty('Clothing ID cannot be empty')),
 });

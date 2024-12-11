@@ -2,15 +2,50 @@ import { Request, Response, Router } from 'express';
 import { validate } from '../../validators/validate';
 import { FitSchema, DeleteFitSchema } from '../../validators/schemas/schemas';
 import { createFit, deleteFit } from '../../controllers/fits';
+import { initializeApp } from 'firebase/app';
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from 'firebase/storage';
+import multer from 'multer';
+import firebaseConfig from '../../config/firebase.config';
 
 const router = Router();
 
+initializeApp(firebaseConfig);
+const storage = getStorage();
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 router.post(
   '/create-fit',
+  upload.single('thumbnail'),
   validate(FitSchema),
   async (req: Request, res: Response, next) => {
     try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Thumbnail file is required.' });
+      }
+
       const fitData = req.body;
+      const dateTime = new Date().toISOString();
+      const storageRef = ref(
+        storage,
+        `thumbnails/${req.file.originalname}_${dateTime}`
+      );
+
+      const metadata = { contentType: req.file.mimetype };
+
+      const snapshot = await uploadBytesResumable(
+        storageRef,
+        req.file.buffer,
+        metadata
+      );
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      fitData.thumbnail_url = downloadURL;
 
       const newFit = await createFit(fitData);
 

@@ -7,6 +7,7 @@ import uploadRouter from './upload';
 import chatRouter from './chat';
 import scrapingRouter from './scraping';
 import notificationRouter from './notification';
+import fitsRouter from './fits';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use('/chat', chatRouter);
 app.use('/scraping', scrapingRouter);
 app.use('/images', uploadRouter);
 app.use('/notification', notificationRouter);
+app.use('/fits', fitsRouter);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Web router');
