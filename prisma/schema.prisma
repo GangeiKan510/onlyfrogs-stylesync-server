@@ -12,6 +12,8 @@ model User {
   id                       String    @id @unique @default(uuid())
   serial                   Int       @unique @default(autoincrement())
   tokens                   Int
+  auto_tag_tokens          Int       @default(3)
+  last_token_reset         DateTime? @default(now())
   email                    String    @unique
   first_name               String
   last_name                String
