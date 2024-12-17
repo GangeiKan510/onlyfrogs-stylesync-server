@@ -16,7 +16,7 @@
     "precommit": "npm run lint && npm run prettier && npm run build && lint-staged",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "deploy": "npm run build && npm run start",
-   "postinstall": "prisma generate --schema=prisma/schema.prisma"
+    "postinstall": "prisma generate --schema=prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
@@ -64,6 +64,7 @@
     "puppeteer-core": "^23.9.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "sharp": "^0.33.5",
     "winston": "^3.17.0",
     "zod": "^3.23.8"
   },
