@@ -73,7 +73,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const processedImageUrl = backgroundRemovalResponse.data.file_url;
 
     const prompt = `
-      You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet.
+      You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet. Also consider accessories as items that we can store in the closet.
 
       Clothing items include:
       - Tops (e.g., shirts, blouses, t-shirts, jackets, coats)
@@ -227,7 +227,7 @@ router.post('/upload-image-url', async (req, res) => {
     const finalProcessedUrl = backgroundRemovalResponse.data.file_url;
 
     const prompt = `
-      You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet.
+      You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet. Also consider accessories as items that we can store in the closet.
 
       Clothing items include:
       - Tops (e.g., shirts, blouses, t-shirts, jackets, coats)
