@@ -81,7 +81,16 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       - Dresses
       - Outerwear (e.g., sweaters, hoodies)
       - Footwear (e.g., shoes, boots)
-      - Accessories commonly stored in a closet (e.g., hats, belts, scarves)
+     
+       **Accessories include:**
+      - Headwear (e.g., hats, caps, beanies)
+      - Neckwear (e.g., scarves, ties, necklaces, chokers)
+      - Belts and waist accessories
+      - Bags (e.g., handbags, backpacks, clutches)
+      - Jewelry (e.g., rings, bracelets, watches, earrings)
+      - Eyewear (e.g., sunglasses, glasses)
+      - Gloves and hand accessories
+      - Other presentable accessories stored in closets.
 
       Criteria:
       1. The clothing item must be **clear and visually identifiable** in the image.
@@ -226,7 +235,16 @@ router.post('/upload-image-url', async (req, res) => {
       - Dresses
       - Outerwear (e.g., sweaters, hoodies)
       - Footwear (e.g., shoes, boots)
-      - Accessories commonly stored in a closet (e.g., hats, belts, scarves)
+      
+      **Accessories include:**
+      - Headwear (e.g., hats, caps, beanies)
+      - Neckwear (e.g., scarves, ties, necklaces, chokers)
+      - Belts and waist accessories
+      - Bags (e.g., handbags, backpacks, clutches)
+      - Jewelry (e.g., rings, bracelets, watches, earrings)
+      - Eyewear (e.g., sunglasses, glasses)
+      - Gloves and hand accessories
+      - Other presentable accessories stored in closets.
 
       Criteria:
       1. The clothing item must be **clear and visually identifiable** in the image.
