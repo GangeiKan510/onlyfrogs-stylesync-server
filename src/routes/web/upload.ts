@@ -12,6 +12,8 @@ import firebaseConfig from '../../config/firebase.config';
 import { createClothing } from '../../controllers/clothing';
 import { updateProfileUrl } from '../../controllers/user';
 import OpenAI from 'openai';
+import sharp from 'sharp';
+import FormData from 'form-data';
 
 const router: Router = express.Router();
 
@@ -183,20 +185,37 @@ router.post('/upload-image-url', async (req, res) => {
         .json({ error: 'image_url, user_id, and closet_id are required.' });
     }
 
-    const formData = new URLSearchParams();
-    formData.append('image_url', image_url);
+    const imageResponse = await axios.get(image_url, {
+      responseType: 'arraybuffer',
+    });
+
+    const convertedImageBuffer = await sharp(imageResponse.data)
+      .resize(512, 512, { fit: 'inside' })
+      .png()
+      .toBuffer();
+
+    const dateTime = new Date().toISOString();
+    const storageRef = ref(storage, `processed_images/${dateTime}.png`);
+
+    const metadata = { contentType: 'image/png' };
+    const snapshot = await uploadBytesResumable(
+      storageRef,
+      convertedImageBuffer,
+      metadata
+    );
+
+    const processedImageUrl = await getDownloadURL(snapshot.ref);
+
+    const formData = new FormData();
+    formData.append('image_url', processedImageUrl);
 
     const backgroundRemovalResponse = await axios.post(
       `${process.env.RENDER_ML_SERVER_API}/remove-background/`,
       formData,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
+      { headers: formData.getHeaders() }
     );
 
-    const processedImageUrl = backgroundRemovalResponse.data.file_url;
+    const finalProcessedUrl = backgroundRemovalResponse.data.file_url;
 
     const prompt = `
       You are tasked with determining whether the image at the provided URL depicts a clear and presentable clothing item that is commonly stored in a closet.
@@ -220,7 +239,7 @@ router.post('/upload-image-url', async (req, res) => {
         "isClothing": false // if the image does not contain a clothing item or is ambiguous
       }
 
-      URL: ${processedImageUrl}
+      URL: ${finalProcessedUrl}
 
       Ensure your response is valid JSON. Do not include any additional text or comments.
     `;
@@ -237,7 +256,7 @@ router.post('/upload-image-url', async (req, res) => {
             },
             {
               type: 'image_url',
-              image_url: { url: processedImageUrl, detail: 'high' },
+              image_url: { url: finalProcessedUrl, detail: 'high' },
             },
           ],
         },
@@ -258,15 +277,7 @@ router.post('/upload-image-url', async (req, res) => {
       .replace(/```/g, '')
       .trim();
 
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(cleanedResponse);
-    } catch (error) {
-      console.error('Failed to parse GPT response:', cleanedResponse, error);
-      return res
-        .status(500)
-        .json({ error: 'Failed to parse the response from OpenAI API.' });
-    }
+    const parsedResponse = JSON.parse(cleanedResponse);
 
     if (!parsedResponse.isClothing) {
       return res
@@ -274,27 +285,8 @@ router.post('/upload-image-url', async (req, res) => {
         .json({ error: 'The uploaded image is not a valid clothing item.' });
     }
 
-    const dateTime = giveCurrentDateTime();
-    const storageRef = ref(storage, `files/${processedImageUrl}_${dateTime}`);
-
-    const response = await axios.get(processedImageUrl, {
-      responseType: 'arraybuffer',
-    });
-
-    const metadata = {
-      contentType: 'image/jpeg',
-    };
-
-    const snapshot = await uploadBytesResumable(
-      storageRef,
-      Buffer.from(response.data, 'binary'),
-      metadata
-    );
-
-    const firebaseUrl = await getDownloadURL(snapshot.ref);
-
     const clothingData = {
-      image_url: firebaseUrl,
+      image_url: finalProcessedUrl,
       category: category || 'default-category',
       tags: tags ? tags.split(',') : [],
       user_id,
@@ -302,19 +294,16 @@ router.post('/upload-image-url', async (req, res) => {
     };
 
     const clothingItem = await createClothing(clothingData);
-
-    return res.send({
+    console.log('SUCCESS NEGRO!');
+    return res.json({
       message:
-        'Image processed, background removed, uploaded to Firebase, and clothing item created',
+        'Image processed, background removed, and clothing item created.',
       originalImageUrl: image_url,
-      processedImageUrl: firebaseUrl,
+      processedImageUrl: finalProcessedUrl,
       clothingItem,
     });
   } catch (error: any) {
-    console.error(
-      'Error during image processing, background removal, or clothing creation:',
-      error.message
-    );
+    console.error('Error during image upload:', error.message);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
