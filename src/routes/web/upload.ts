@@ -14,6 +14,7 @@ import { updateProfileUrl } from '../../controllers/user';
 import OpenAI from 'openai';
 import sharp from 'sharp';
 import FormData from 'form-data';
+import { deleteObject } from 'firebase/storage';
 
 const router: Router = express.Router();
 
@@ -327,6 +328,8 @@ router.post('/upload-image-url', async (req, res) => {
 });
 
 router.post('/analyze-skin-tone', upload.single('file'), async (req, res) => {
+  let storageRef;
+
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'File is required.' });
@@ -365,7 +368,9 @@ router.post('/analyze-skin-tone', upload.single('file'), async (req, res) => {
       }
     );
 
-    // Only include the skin tone analysis in the response
+    await deleteObject(storageRef);
+    console.log('Uploaded file deleted from Firebase Storage.');
+
     return res.send({
       skinToneAnalysis: analyzeResponse.data,
     });
@@ -374,6 +379,21 @@ router.post('/analyze-skin-tone', upload.single('file'), async (req, res) => {
       'Error during file upload and skin tone analysis:',
       error.message
     );
+
+    if (storageRef) {
+      try {
+        await deleteObject(storageRef);
+        console.log(
+          'Uploaded file deleted from Firebase Storage due to error.'
+        );
+      } catch (deletionError: any) {
+        console.error(
+          'Failed to delete uploaded file after error:',
+          deletionError.message
+        );
+      }
+    }
+
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
