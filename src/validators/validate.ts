@@ -6,7 +6,9 @@ export const validate =
     try {
       schema.parse(req.body);
       next();
-    } catch (error) {
-      return res.status(400).json(console.error(error));
+    } catch (error: any) {
+      return res
+        .status(400)
+        .json({ error: error.errors[0]?.message || 'Validation error' });
     }
   };
