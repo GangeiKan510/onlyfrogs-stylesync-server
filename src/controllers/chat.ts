@@ -135,3 +135,54 @@ export const deleteChatSessionMessages = async (userId: string) => {
     };
   }
 };
+
+export const deductTokens = async (userId: string, amount: number = 15) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return {
+        status: 404,
+        message: 'User not found',
+      };
+    }
+
+    if (user.role !== 1) {
+      return {
+        status: 200,
+        message: 'No tokens deducted. User role does not require deduction.',
+      };
+    }
+
+    if (user.tokens < amount) {
+      return {
+        status: 400,
+        message: `Insufficient tokens. User has ${user.tokens} tokens, but ${amount} are required.`,
+      };
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        tokens: {
+          decrement: amount,
+        },
+      },
+    });
+
+    return {
+      status: 200,
+      message: `${amount} tokens deducted successfully`,
+      user: updatedUser,
+    };
+  } catch (error: any) {
+    console.error('Error deducting tokens:', error.message);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};

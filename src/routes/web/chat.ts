@@ -9,6 +9,7 @@ import { sendMessage } from '../../controllers/chat';
 import { getUserById } from '../../controllers/user';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { deductTokens } from '../../controllers/chat';
 
 const router = Router();
 
@@ -33,6 +34,11 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     }
 
     const user = userResult.user;
+
+    const tokenDeductionResult = await deductTokens(userId, 15);
+    if (tokenDeductionResult.status !== 200) {
+      return res.status(tokenDeductionResult.status).json(tokenDeductionResult);
+    }
 
     const consider_skin_tone = user?.promptSettings?.consider_skin_tone;
     const prioritize_preferences = user?.promptSettings?.prioritize_preferences;
