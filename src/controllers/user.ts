@@ -424,7 +424,7 @@ export const updateUserPreferences = async (
         budget_min: budgetRange.min,
         budget_max: budgetRange.max,
         favorite_colors: favoriteColors,
-        style_preferences: styles,
+        preferred_style: styles,
       },
     });
 
