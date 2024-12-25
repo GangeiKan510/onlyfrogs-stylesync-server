@@ -93,7 +93,7 @@ export const UpdateUserSchema = z.object({
   skin_tone_complements: z.array(z.string()).optional(),
   body_type: z.string().optional(),
   preferred_style: z.array(z.string()).optional(),
-  favourite_colors: z.array(z.string()).optional(),
+  favorite_colors: z.array(z.string()).optional(),
   preferred_brands: z.array(z.string()).optional(),
 
   budget_min: z
