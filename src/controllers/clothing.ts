@@ -7,9 +7,10 @@ export const createClothing = async (body: ClothingProps) => {
       data: {
         image_url: body.image_url,
         category: body.category,
-        tags: body.tags,
-        user_id: body.user_id,
         closet_id: body.closet_id,
+        tags: {
+          create: body.tags?.map((tag) => ({ tag })),
+        },
         worn: {
           create: {
             last_worn: null,
@@ -40,16 +41,24 @@ export const updateClothing = async (
       data: {
         image_url: updates.image_url ?? undefined,
         category: updates.category ?? undefined,
-        tags: updates.tags ?? undefined,
-        user_id: updates.user_id ?? undefined,
         closet_id: updates.closet_id ?? undefined,
-        season: updates.season ?? undefined,
-        occasion: updates.occasion ?? undefined,
         material: updates.material ?? undefined,
         pattern: updates.pattern ?? undefined,
         brand: updates.brand ?? undefined,
         color: updates.color ?? undefined,
         name: updates.name ?? undefined,
+        seasons: updates.season
+          ? {
+              deleteMany: {},
+              create: updates.season.map((season) => ({ season })),
+            }
+          : undefined,
+        occasions: updates.occasion
+          ? {
+              deleteMany: {},
+              create: updates.occasion.map((occasion) => ({ occasion })),
+            }
+          : undefined,
       },
     });
 

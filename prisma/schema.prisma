@@ -26,29 +26,30 @@ model User {
   budget_max               Int?
   location                 Json?
   profile_url              String?
+  role                     Int?
 
-  tokens         UserToken[]
-  promptSettings PromptSettings?
+  tokens          UserToken[]
+  prompt_settings PromptSettings?
 
-  skinToneComplements UserSkinToneComplement[]
-  stylePreferences    UserStylePreference[]
-  favoriteColors      UserFavoriteColor[]
-  preferredBrands     UserPreferredBrand[]
-  preferredStyles     UserPreferredStyle[]
+  skin_tone_complements UserSkinToneComplement[]
+  style_preferences     UserStylePreference[]
+  favorite_colors       UserFavoriteColor[]
+  preferred_brands      UserPreferredBrand[]
+  preferred_styles      UserPreferredStyle[]
 
   closets       Closet[]
   fits          Fit[]
-  chatSession   ChatSession?
+  chat_session  ChatSession?
   notifications Notification[]
 }
 
 model UserToken {
-  id        String   @id @unique @default(uuid())
-  user_id   String
-  user      User     @relation(fields: [user_id], references: [id])
-  amount    Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @unique @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  amount     Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model UserSkinToneComplement {
@@ -92,8 +93,8 @@ model PromptSettings {
   user                   User     @relation(fields: [user_id], references: [id])
   consider_skin_tone     Boolean  @default(false)
   prioritize_preferences Boolean  @default(false)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
 }
 
 model Clothing {
@@ -145,8 +146,8 @@ model FitClothing {
   clothing_id String
   fit         Fit      @relation(fields: [fit_id], references: [id])
   clothing    Clothing @relation(fields: [clothing_id], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 }
 
 model Worn {
@@ -155,8 +156,8 @@ model Worn {
   count       Int       @default(0)
   clothing_id String
   clothing    Clothing  @relation(fields: [clothing_id], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 }
 
 model Closet {
@@ -180,16 +181,16 @@ model Fit {
 }
 
 model ChatSession {
-  id        String    @id @unique @default(uuid())
-  createdAt DateTime  @default(now())
-  userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id])
-  messages  Message[]
+  id         String    @id @unique @default(uuid())
+  created_at DateTime  @default(now())
+  user_id    String    @unique
+  user       User      @relation(fields: [user_id], references: [id])
+  messages   Message[]
 }
 
 model Message {
   id              String      @id @unique @default(uuid())
-  createdAt       DateTime    @default(now())
+  created_at      DateTime    @default(now())
   role            String
   content         String
   chat_session_id String
@@ -197,12 +198,12 @@ model Message {
 }
 
 model Notification {
-  id        String   @id @unique @default(uuid())
-  user_id   String
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  type      String
-  content   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @unique @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type       String
+  content    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }

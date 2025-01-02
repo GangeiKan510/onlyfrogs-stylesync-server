@@ -40,8 +40,9 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       return res.status(tokenDeductionResult.status).json(tokenDeductionResult);
     }
 
-    const consider_skin_tone = user?.promptSettings?.consider_skin_tone;
-    const prioritize_preferences = user?.promptSettings?.prioritize_preferences;
+    const consider_skin_tone = user?.prompt_settings?.consider_skin_tone;
+    const prioritize_preferences =
+      user?.prompt_settings?.prioritize_preferences;
 
     let lat, lon, locationName, weatherDescription, temperature, windSpeed;
 
@@ -85,12 +86,13 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
     }
 
     const previousMessages =
-      user?.chat_ession?.messages.map((msg: any) => ({
+      user?.chat_session?.messages.map((msg: any) => ({
         role: msg.role,
         content: msg.content,
       })) ?? [];
 
-    const userClothes = user?.clothes || [];
+    const userClothes =
+      user?.closets?.flatMap((closet) => closet.clothes) || [];
 
     let clothingMessage = '';
 
@@ -104,9 +106,11 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         - Brand: ${item.brand}
         - Category: ${item.category}
         - Color: ${item.color}
-        - Occasion: ${item.occasion}
+        - Occasion: ${
+          item.occasions?.map((o) => o.occasion).join(', ') || 'unknown'
+        }
         - Pattern: ${item.pattern}
-        - Season: ${item.season}
+        - Season: ${item.seasons?.map((s) => s.season).join(', ') || 'unknown'}
         - Material: ${item.material}
         - Image URL: ${item.image_url ? item.image_url : 'N/A'}
       `
@@ -190,9 +194,11 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       - Brand: ${item.brand || 'unknown'}
       - Category: ${item.category || 'unknown'}
       - Color: ${item.color || 'unknown'}
-      - Occasion: ${item.occasion || 'unknown'}
+      - Occasion: ${
+        item.occasions?.map((o) => o.occasion).join(', ') || 'unknown'
+      }
       - Pattern: ${item.pattern || 'unknown'}
-      - Season: ${item.season || 'unknown'}
+      - Season: ${item.seasons?.map((s) => s.season).join(', ') || 'unknown'}
       - Material: ${item.material || 'unknown'}
       - ![${item.name}](${item.image_url || 'No image available'})
     `
