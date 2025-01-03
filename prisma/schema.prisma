@@ -14,19 +14,19 @@ model User {
   email                    String    @unique
   first_name               String
   last_name                String
-  birth_date               DateTime?
-  gender                   String?
-  height                   Int?
-  weight                   Int?
-  skin_tone_classification String?
-  season                   String?
-  sub_season               String?
-  body_type                String?
-  budget_min               Int?
-  budget_max               Int?
-  location                 Json?
-  profile_url              String?
-  role                     Int?
+  birth_date               DateTime? @default(now())
+  gender                   String?   @default("")
+  height                   Int?      @default(0)
+  weight                   Int?      @default(0)
+  skin_tone_classification String?   @default("")
+  season                   String?   @default("")
+  sub_season               String?   @default("")
+  body_type                String?   @default("")
+  budget_min               Int?      @default(0)
+  budget_max               Int?      @default(0)
+  location                 Json?     @default("{}")
+  profile_url              String?   @default("")
+  role                     Int?      @default(0)
 
   tokens          UserToken[]
   prompt_settings PromptSettings?

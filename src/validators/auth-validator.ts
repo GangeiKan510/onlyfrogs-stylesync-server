@@ -31,7 +31,6 @@ export const validateTokenOwnership = () => {
   return (req: Request | any, res: Response, next: NextFunction) => {
     try {
       if (excludedPaths.includes(req.path) || req.query.skipAuth === 'true') {
-        console.log('Skipped ownership validation for path:', req.path);
         return next();
       }
 
@@ -42,15 +41,12 @@ export const validateTokenOwnership = () => {
       }
 
       const userIdFromToken = req.jwt.uid;
-      const userIdFromRequest =
-        req.params.userId || req.body.userId || req.query.userId;
 
-      if (!userIdFromRequest || userIdFromToken !== userIdFromRequest) {
-        throw createError401('Token does not belong to the specified user.');
-      }
+      req.userId = userIdFromToken;
 
       next();
     } catch (err: any) {
+      console.error('Validation Error:', err.message);
       next(createError401(err.message || 'Unauthorized access.'));
     }
   };

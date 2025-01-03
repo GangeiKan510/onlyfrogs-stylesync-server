@@ -14,13 +14,32 @@ export const getUserByEmail = async (email: string) => {
             clothes: {
               include: {
                 worn: true,
+                tags: true,
+                seasons: true,
+                occasions: true,
+                fits: true,
               },
             },
           },
         },
         notifications: true,
         prompt_settings: true,
-        fits: true,
+        fits: {
+          include: {
+            clothes: true,
+          },
+        },
+        tokens: true,
+        skin_tone_complements: true,
+        style_preferences: true,
+        favorite_colors: true,
+        preferred_brands: true,
+        preferred_styles: true,
+        chat_session: {
+          include: {
+            messages: true,
+          },
+        },
       },
     });
 
