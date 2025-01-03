@@ -30,7 +30,7 @@ export const markNotificationAsRead = async (notificationId: string) => {
         id: notificationId,
       },
       data: {
-        isRead: true,
+        is_read: true,
       },
     });
 
