@@ -199,7 +199,7 @@ Suggest a complete outfit by pairing items from the user's closet with the selec
     let suggestedOutfitIds;
 
     try {
-      const jsonMatch = gptResponse.match(/\[.*\]/s);
+      const jsonMatch = gptResponse.match(/\[([\s\S]*?)\]/);
       if (jsonMatch) {
         suggestedOutfitIds = JSON.parse(jsonMatch[0]);
       } else {
