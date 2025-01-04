@@ -101,7 +101,6 @@ model Clothing {
   id        String  @id @unique @default(uuid())
   serial    Int     @unique @default(autoincrement())
   image_url String
-  category  String
   color     String?
   material  String?
   pattern   String?
@@ -111,12 +110,20 @@ model Clothing {
   closet_id String
   closet    Closet @relation(fields: [closet_id], references: [id])
 
-  tags      ClothingTag[]
-  seasons   ClothingSeason[]
-  occasions ClothingOccasion[]
-  fits      FitClothing[]
+  tags       ClothingTag[]
+  seasons    ClothingSeason[]
+  occasions  ClothingOccasion[]
+  categories ClothingCategory[]
+  fits       FitClothing[]
+  worn       Worn[]
+}
 
-  worn Worn[]
+model ClothingCategory {
+  id          String   @id @unique @default(uuid())
+  clothing_id String
+  clothing    Clothing @relation(fields: [clothing_id], references: [id])
+  category    String
+  type        String
 }
 
 model ClothingTag {

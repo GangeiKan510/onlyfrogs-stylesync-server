@@ -6,7 +6,6 @@ export const createClothing = async (body: ClothingProps) => {
     const newClothing = await prisma.clothing.create({
       data: {
         image_url: body.image_url,
-        category: body.category,
         closet_id: body.closet_id,
         tags: {
           create: body.tags?.map((tag) => ({ tag })),
@@ -35,12 +34,9 @@ export const updateClothing = async (
 ) => {
   try {
     const updatedClothing = await prisma.clothing.update({
-      where: {
-        id: clothingId,
-      },
+      where: { id: clothingId },
       data: {
         image_url: updates.image_url ?? undefined,
-        category: updates.category ?? undefined,
         closet_id: updates.closet_id ?? undefined,
         material: updates.material ?? undefined,
         pattern: updates.pattern ?? undefined,
@@ -50,13 +46,26 @@ export const updateClothing = async (
         seasons: updates.season
           ? {
               deleteMany: {},
-              create: updates.season.map((season) => ({ season })),
+              create: updates.season.map((season: string) => ({ season })),
             }
           : undefined,
         occasions: updates.occasion
           ? {
               deleteMany: {},
-              create: updates.occasion.map((occasion) => ({ occasion })),
+              create: updates.occasion.map((occasion: string) => ({
+                occasion,
+              })),
+            }
+          : undefined,
+        categories: updates.category
+          ? {
+              deleteMany: {},
+              create: [
+                {
+                  category: updates.category.name,
+                  type: updates.category.type,
+                },
+              ],
             }
           : undefined,
       },

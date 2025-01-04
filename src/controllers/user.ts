@@ -18,6 +18,7 @@ export const getUserByEmail = async (email: string) => {
                 seasons: true,
                 occasions: true,
                 fits: true,
+                categories: true,
               },
             },
           },
