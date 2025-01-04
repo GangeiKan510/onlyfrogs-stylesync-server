@@ -60,7 +60,9 @@ router.post(
       const fitData = {
         name,
         user_id,
-        piece_ids: Array.isArray(piece_ids) ? piece_ids : [piece_ids],
+        piece_ids: Array.isArray(piece_ids)
+          ? piece_ids
+          : String(piece_ids).split(','),
         thumbnail_url: downloadURL,
       };
 
