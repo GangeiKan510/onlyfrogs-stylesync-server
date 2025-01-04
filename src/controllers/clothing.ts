@@ -80,6 +80,30 @@ export const updateClothing = async (
 
 export const deleteClothing = async (clothingId: string) => {
   try {
+    await prisma.fitClothing.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingSeason.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingTag.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingCategory.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingOccasion.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.worn.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
     const deletedClothing = await prisma.clothing.delete({
       where: {
         id: clothingId,
