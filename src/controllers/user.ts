@@ -67,8 +67,11 @@ export const getUserById = async (userId: string) => {
             clothes: {
               include: {
                 worn: true,
-                occasions: true,
+                tags: true,
                 seasons: true,
+                occasions: true,
+                fits: true,
+                categories: true,
               },
             },
           },

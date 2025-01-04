@@ -100,11 +100,11 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
       clothingMessage = `
       The user has the following clothing items in their closet:
       ${userClothes
-        .map(
-          (item) => `
+        .map((item) => {
+          return `
       - **Your ${item.name}**:
         - Brand: ${item.brand}
-        - Category: ${item.category}
+        - Category: ${item.categories?.map((c) => c.category + ' ' + c.type).join(', ') || 'unknown'}
         - Color: ${item.color}
         - Occasion: ${
           item.occasions?.map((o) => o.occasion).join(', ') || 'unknown'
@@ -113,8 +113,8 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         - Season: ${item.seasons?.map((s) => s.season).join(', ') || 'unknown'}
         - Material: ${item.material}
         - Image URL: ${item.image_url ? item.image_url : 'N/A'}
-      `
-        )
+      `;
+        })
         .join('\n')} 
       Please prioritize these items when suggesting outfits. 
       When referencing these items in the outfit suggestion, **always prepend "Your"** to the item name (e.g., "Your Blue Hoodie"). For example:
@@ -192,7 +192,7 @@ router.post('/prompt-gpt', async (req: Request, res: Response) => {
         (item) => `
     - **${item.name}**:
       - Brand: ${item.brand || 'unknown'}
-      - Category: ${item.category || 'unknown'}
+      - Category: ${item.categories || 'unknown'}
       - Color: ${item.color || 'unknown'}
       - Occasion: ${
         item.occasions?.map((o) => o.occasion).join(', ') || 'unknown'
