@@ -48,12 +48,6 @@ The **OnlyFrogs StyleSync Server** is the backend server for the StyleSync platf
 
 3. Set up environment variables:
    - Create a `.env` file in the root directory.
-   - Add the following variables:
-     ```env
-     DATABASE_URL=your_postgresql_connection_string
-     FIREBASE_API_KEY=your_firebase_api_key
-     OPENAI_API_KEY=your_openai_api_key
-     ```
 
 4. Generate Prisma client:
    ```bash
@@ -110,8 +104,6 @@ npm test
 - ![Puppeteer](https://img.shields.io/badge/Puppeteer-40B5A4?logo=puppeteer&logoColor=white) **Puppeteer**: Headless browser for web scraping and automation.
 
 ### Contribution
-
-We welcome contributions! Feel free to fork the repository and submit pull requests. Follow these steps to contribute:
 
 1. Fork the repository.
 2. Create a new branch:
