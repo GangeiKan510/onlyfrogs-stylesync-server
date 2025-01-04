@@ -11,75 +11,143 @@ datasource db {
 model User {
   id                       String    @id @unique @default(uuid())
   serial                   Int       @unique @default(autoincrement())
-  tokens                   Int
-  auto_tag_tokens          Int       @default(3)
-  last_token_reset         DateTime? @default(now())
   email                    String    @unique
   first_name               String
   last_name                String
-  birth_date               DateTime?
-  gender                   String?
-  height                   Int?
-  weight                   Int?
-  skin_tone_classification String?
-  season                   String?
-  sub_season               String?
-  skin_tone_complements    String[]
-  body_type                String?
-  style_preferences        String[]
-  favorite_colors          String[]
-  preferred_brands         String[]
-  preferred_style          String[]
-  budget_min               Int?
-  budget_max               Int?
-  location                 Json?
-  profile_url              String?
-  role                     Int       @default(1)
+  birth_date               DateTime? @default(now())
+  gender                   String?   @default("")
+  height                   Int?      @default(0)
+  weight                   Int?      @default(0)
+  skin_tone_classification String?   @default("")
+  season                   String?   @default("")
+  sub_season               String?   @default("")
+  body_type                String?   @default("")
+  budget_min               Int?      @default(0)
+  budget_max               Int?      @default(0)
+  location                 Json?     @default("{}")
+  profile_url              String?   @default("")
+  role                     Int?      @default(0)
 
-  clothes        Clothing[]
-  closets        Closet[]
-  fits           Fit[]
-  chat_ession    ChatSession?
-  promptSettings PromptSettings?
+  tokens          UserToken[]
+  prompt_settings PromptSettings?
 
+  skin_tone_complements UserSkinToneComplement[]
+  style_preferences     UserStylePreference[]
+  favorite_colors       UserFavoriteColor[]
+  preferred_brands      UserPreferredBrand[]
+  preferred_styles      UserPreferredStyle[]
+
+  closets       Closet[]
+  fits          Fit[]
+  chat_session  ChatSession?
   notifications Notification[]
 }
 
-model PromptSettings {
+model UserToken {
+  id         String   @id @unique @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  amount     Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model UserSkinToneComplement {
+  id         String @id @unique @default(uuid())
+  user_id    String
+  user       User   @relation(fields: [user_id], references: [id])
+  complement String
+}
+
+model UserStylePreference {
   id      String @id @unique @default(uuid())
-  user_id String @unique
+  user_id String
   user    User   @relation(fields: [user_id], references: [id])
+  style   String
+}
 
-  consider_skin_tone     Boolean @default(false)
-  prioritize_preferences Boolean @default(false)
+model UserFavoriteColor {
+  id      String @id @unique @default(uuid())
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
+  color   String
+}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model UserPreferredBrand {
+  id      String @id @unique @default(uuid())
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
+  brand   String
+}
+
+model UserPreferredStyle {
+  id      String @id @unique @default(uuid())
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
+  style   String
+}
+
+model PromptSettings {
+  id                     String   @id @unique @default(uuid())
+  user_id                String   @unique
+  user                   User     @relation(fields: [user_id], references: [id])
+  consider_skin_tone     Boolean  @default(false)
+  prioritize_preferences Boolean  @default(false)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
 }
 
 model Clothing {
-  id        String   @id @unique @default(uuid())
-  serial    Int      @unique @default(autoincrement())
+  id        String  @id @unique @default(uuid())
+  serial    Int     @unique @default(autoincrement())
   image_url String
-  category  Json     @default("{}")
-  tags      String[] @default([])
+  category  String
+  color     String?
+  material  String?
+  pattern   String?
+  brand     String?
+  name      String?
 
-  season   String[] @default([])
-  occasion String[] @default([])
-  color    String?
-  material String?
-  pattern  String?
-  brand    String?
-  name     String?
-
-  user_id   String
-  user      User   @relation(fields: [user_id], references: [id])
   closet_id String
   closet    Closet @relation(fields: [closet_id], references: [id])
 
-  fits Fit[] @relation("FitClothing")
+  tags      ClothingTag[]
+  seasons   ClothingSeason[]
+  occasions ClothingOccasion[]
+  fits      FitClothing[]
 
   worn Worn[]
+}
+
+model ClothingTag {
+  id          String   @id @unique @default(uuid())
+  clothing_id String
+  clothing    Clothing @relation(fields: [clothing_id], references: [id])
+  tag         String
+}
+
+model ClothingSeason {
+  id          String   @id @unique @default(uuid())
+  clothing_id String
+  clothing    Clothing @relation(fields: [clothing_id], references: [id])
+  season      String
+}
+
+model ClothingOccasion {
+  id          String   @id @unique @default(uuid())
+  clothing_id String
+  clothing    Clothing @relation(fields: [clothing_id], references: [id])
+  occasion    String
+}
+
+model FitClothing {
+  id          String   @id @unique @default(uuid())
+  fit_id      String
+  clothing_id String
+  fit         Fit      @relation(fields: [fit_id], references: [id])
+  clothing    Clothing @relation(fields: [clothing_id], references: [id])
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 }
 
 model Worn {
@@ -88,62 +156,54 @@ model Worn {
   count       Int       @default(0)
   clothing_id String
   clothing    Clothing  @relation(fields: [clothing_id], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 }
 
 model Closet {
-  id          String @id @unique @default(uuid())
-  serial      Int    @unique @default(autoincrement())
+  id          String     @id @unique @default(uuid())
+  serial      Int        @unique @default(autoincrement())
   name        String
   description String
-
-  user_id String
-  user    User   @relation(fields: [user_id], references: [id])
-
-  clothes Clothing[]
+  user_id     String
+  user        User       @relation(fields: [user_id], references: [id])
+  clothes     Clothing[]
 }
 
 model Fit {
-  id            String  @id @unique @default(uuid())
-  serial        Int     @unique @default(autoincrement())
+  id            String        @id @unique @default(uuid())
+  serial        Int           @unique @default(autoincrement())
   name          String
   thumbnail_url String?
-
-  user_id String
-  user    User       @relation(fields: [user_id], references: [id])
-  clothes Clothing[] @relation("FitClothing")
+  user_id       String
+  user          User          @relation(fields: [user_id], references: [id])
+  clothes       FitClothing[]
 }
 
 model ChatSession {
-  id        String   @id @unique @default(uuid())
-  createdAt DateTime @default(now())
-
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
-
-  messages Message[]
+  id         String    @id @unique @default(uuid())
+  created_at DateTime  @default(now())
+  user_id    String    @unique
+  user       User      @relation(fields: [user_id], references: [id])
+  messages   Message[]
 }
 
 model Message {
-  id        String   @id @unique @default(uuid())
-  createdAt DateTime @default(now())
-
-  role    String
-  content String
-
+  id              String      @id @unique @default(uuid())
+  created_at      DateTime    @default(now())
+  role            String
+  content         String
   chat_session_id String
   chat_session    ChatSession @relation(fields: [chat_session_id], references: [id])
 }
 
 model Notification {
-  id        String   @id @unique @default(uuid())
-  user_id   String
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  type      String // INFO", "WARNING", "SUCCESS", "ERROR"
-  content   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @unique @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type       String
+  content    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }

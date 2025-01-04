@@ -34,7 +34,7 @@ export const sendMessage = async (
   try {
     const chatSession = await prisma.chatSession.findUnique({
       where: {
-        userId: userId,
+        user_id: userId,
       },
     });
 
@@ -72,7 +72,7 @@ export const retrieveSessionChat = async (userId: string) => {
   try {
     const chatSession = await prisma.chatSession.findUnique({
       where: {
-        userId: userId,
+        user_id: userId,
       },
       include: {
         messages: true,
@@ -105,7 +105,7 @@ export const deleteChatSessionMessages = async (userId: string) => {
   try {
     const chatSession = await prisma.chatSession.findUnique({
       where: {
-        userId: userId,
+        user_id: userId,
       },
     });
 
@@ -138,44 +138,35 @@ export const deleteChatSessionMessages = async (userId: string) => {
 
 export const deductTokens = async (userId: string, amount: number = 15) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const userTokens = await prisma.userToken.findFirst({
+      where: { user_id: userId },
     });
 
-    if (!user) {
+    if (!userTokens) {
       return {
         status: 404,
-        message: 'User not found',
+        message: 'User tokens not found',
       };
     }
 
-    if (user.role !== 1) {
-      return {
-        status: 200,
-        message: 'No tokens deducted. User role does not require deduction.',
-      };
-    }
-
-    if (user.tokens < amount) {
+    if (userTokens.amount < amount) {
       return {
         status: 400,
-        message: `Insufficient tokens. User has ${user.tokens} tokens, but ${amount} are required.`,
+        message: `Insufficient tokens. User has ${userTokens.amount} tokens, but ${amount} are required.`,
       };
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
+    const updatedTokens = await prisma.userToken.update({
+      where: { id: userTokens.id },
       data: {
-        tokens: {
-          decrement: amount,
-        },
+        amount: userTokens.amount - amount,
       },
     });
 
     return {
       status: 200,
       message: `${amount} tokens deducted successfully`,
-      user: updatedUser,
+      tokens: updatedTokens.amount,
     };
   } catch (error: any) {
     console.error('Error deducting tokens:', error.message);

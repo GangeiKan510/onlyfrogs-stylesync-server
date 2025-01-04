@@ -7,19 +7,39 @@ import { createNotification } from './notification';
 export const getUserByEmail = async (email: string) => {
   try {
     const user = await prisma.user.findUnique({
-      where: {
-        email: email,
-      },
+      where: { email },
       include: {
-        closets: true,
-        clothes: {
+        closets: {
           include: {
-            worn: true,
+            clothes: {
+              include: {
+                worn: true,
+                tags: true,
+                seasons: true,
+                occasions: true,
+                fits: true,
+              },
+            },
           },
         },
         notifications: true,
-        promptSettings: true,
-        fits: true,
+        prompt_settings: true,
+        fits: {
+          include: {
+            clothes: true,
+          },
+        },
+        tokens: true,
+        skin_tone_complements: true,
+        style_preferences: true,
+        favorite_colors: true,
+        preferred_brands: true,
+        preferred_styles: true,
+        chat_session: {
+          include: {
+            messages: true,
+          },
+        },
       },
     });
 
@@ -41,15 +61,28 @@ export const getUserById = async (userId: string) => {
         id: userId,
       },
       include: {
-        closets: true,
-        clothes: true,
+        closets: {
+          include: {
+            clothes: {
+              include: {
+                worn: true,
+                occasions: true,
+                seasons: true,
+              },
+            },
+          },
+        },
+        style_preferences: true,
+        favorite_colors: true,
+        preferred_brands: true,
+        skin_tone_complements: true,
         fits: true,
-        chat_ession: {
+        chat_session: {
           include: {
             messages: true,
           },
         },
-        promptSettings: true,
+        prompt_settings: true,
       },
     });
 
@@ -81,7 +114,11 @@ export const createUser = async (body: UserProps) => {
         first_name: body.first_name,
         last_name: body.last_name,
         email: body.email,
-        tokens: body.tokens ?? 150,
+        tokens: {
+          create: {
+            amount: body.tokens ?? 150,
+          },
+        },
         birth_date: body.birth_date ?? null,
         gender: body.gender ?? null,
         height: body.height_cm ?? null,
@@ -89,18 +126,16 @@ export const createUser = async (body: UserProps) => {
         skin_tone_classification: body.skin_tone_classification ?? null,
         season: body.season ?? null,
         sub_season: body.sub_season ?? null,
-        skin_tone_complements: body.skin_tone_complements ?? [],
         body_type: body.body_type ?? null,
-        style_preferences: body.style_preferences ?? [],
-        favorite_colors: body.favorite_colors ?? [],
-        preferred_brands: body.preferred_brands ?? [],
         budget_min: body.budget_min ?? null,
         budget_max: body.budget_max ?? null,
         location: body.location
           ? {
-              lat: body.location.lat,
-              lon: body.location.lon,
-              name: body.location.name,
+              set: {
+                lat: body.location.lat,
+                lon: body.location.lon,
+                name: body.location.name,
+              },
             }
           : Prisma.DbNull,
       },
@@ -153,23 +188,53 @@ export const updateUser = async (
         weight: updates.weight_kg ?? undefined,
         location: updates.location
           ? {
-              lat: updates.location.lat,
-              lon: updates.location.lon,
-              name: updates.location.name,
+              set: {
+                lat: updates.location.lat,
+                lon: updates.location.lon,
+                name: updates.location.name,
+              },
             }
           : undefined,
 
         skin_tone_classification: updates.skin_tone_classification ?? undefined,
         season: updates.season ?? undefined,
         sub_season: updates.sub_season ?? undefined,
-        skin_tone_complements: updates.skin_tone_complements ?? undefined,
         body_type: updates.body_type ?? undefined,
-        style_preferences: updates.style_preferences ?? undefined,
-        favorite_colors: updates.favorite_colors ?? undefined,
-        preferred_brands: updates.preferred_brands ?? undefined,
-        preferred_style: updates.preferred_style ?? undefined,
         budget_min: updates.budget_min ?? undefined,
         budget_max: updates.budget_max ?? undefined,
+
+        skin_tone_complements: updates.skin_tone_complements
+          ? {
+              deleteMany: {},
+              create: updates.skin_tone_complements.map((complement) => ({
+                complement,
+              })),
+            }
+          : undefined,
+        style_preferences: updates.style_preferences
+          ? {
+              deleteMany: {},
+              create: updates.style_preferences.map((style) => ({ style })),
+            }
+          : undefined,
+        favorite_colors: updates.favorite_colors
+          ? {
+              deleteMany: {},
+              create: updates.favorite_colors.map((color) => ({ color })),
+            }
+          : undefined,
+        preferred_brands: updates.preferred_brands
+          ? {
+              deleteMany: {},
+              create: updates.preferred_brands.map((brand) => ({ brand })),
+            }
+          : undefined,
+        preferred_styles: updates.preferred_style
+          ? {
+              deleteMany: {},
+              create: updates.preferred_style.map((style) => ({ style })),
+            }
+          : undefined,
       },
     });
 
@@ -386,7 +451,10 @@ export const updateSkinToneDetails = async (
       where: { id: userId },
       data: {
         skin_tone_classification: skinToneClassification,
-        skin_tone_complements: complements,
+        skin_tone_complements: {
+          deleteMany: {},
+          create: complements.map((complement) => ({ complement })),
+        },
         season: season,
         sub_season: subSeason,
       },
@@ -420,11 +488,20 @@ export const updateUserPreferences = async (
         id: userId,
       },
       data: {
-        preferred_brands: brands,
+        preferred_brands: {
+          deleteMany: {},
+          create: brands.map((brand) => ({ brand })),
+        },
         budget_min: budgetRange.min,
         budget_max: budgetRange.max,
-        favorite_colors: favoriteColors,
-        preferred_style: styles,
+        favorite_colors: {
+          deleteMany: {},
+          create: favoriteColors.map((color) => ({ color })),
+        },
+        style_preferences: {
+          deleteMany: {},
+          create: styles.map((style) => ({ style })),
+        },
       },
     });
 
