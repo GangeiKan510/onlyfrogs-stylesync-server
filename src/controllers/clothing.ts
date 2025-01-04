@@ -132,3 +132,41 @@ export const updateWornDate = async (clothingId: string) => {
     throw error;
   }
 };
+
+export const getSelectedClothingDetails = async (clothingIds: string[]) => {
+  try {
+    const clothes = await prisma.clothing.findMany({
+      where: { id: { in: clothingIds } },
+      include: {
+        tags: true,
+        categories: true,
+        seasons: true,
+        occasions: true,
+        worn: true,
+      },
+    });
+    return clothes;
+  } catch (error) {
+    console.error('Error fetching selected clothing details:', error);
+    throw error;
+  }
+};
+
+export const getUserClosetClothes = async (userId: string) => {
+  try {
+    const closetClothes = await prisma.clothing.findMany({
+      where: { closet: { user_id: userId } },
+      include: {
+        tags: true,
+        categories: true,
+        seasons: true,
+        occasions: true,
+        worn: true,
+      },
+    });
+    return closetClothes;
+  } catch (error) {
+    console.error('Error fetching user closet clothes:', error);
+    throw error;
+  }
+};
