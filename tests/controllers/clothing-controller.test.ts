@@ -80,7 +80,7 @@ describe('Clothing Controller', () => {
         mockUpdatedClothing
       );
 
-      const result = await updateClothing(clothingId, updates);
+      const result = await updateClothing(clothingId, updates as any);
 
       expect(prisma.clothing.update).toHaveBeenCalledWith({
         where: { id: clothingId },

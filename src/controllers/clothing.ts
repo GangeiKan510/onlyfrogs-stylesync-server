@@ -6,7 +6,6 @@ export const createClothing = async (body: ClothingProps) => {
     const newClothing = await prisma.clothing.create({
       data: {
         image_url: body.image_url,
-        category: body.category,
         closet_id: body.closet_id,
         tags: {
           create: body.tags?.map((tag) => ({ tag })),
@@ -35,12 +34,9 @@ export const updateClothing = async (
 ) => {
   try {
     const updatedClothing = await prisma.clothing.update({
-      where: {
-        id: clothingId,
-      },
+      where: { id: clothingId },
       data: {
         image_url: updates.image_url ?? undefined,
-        category: updates.category ?? undefined,
         closet_id: updates.closet_id ?? undefined,
         material: updates.material ?? undefined,
         pattern: updates.pattern ?? undefined,
@@ -50,13 +46,26 @@ export const updateClothing = async (
         seasons: updates.season
           ? {
               deleteMany: {},
-              create: updates.season.map((season) => ({ season })),
+              create: updates.season.map((season: string) => ({ season })),
             }
           : undefined,
         occasions: updates.occasion
           ? {
               deleteMany: {},
-              create: updates.occasion.map((occasion) => ({ occasion })),
+              create: updates.occasion.map((occasion: string) => ({
+                occasion,
+              })),
+            }
+          : undefined,
+        categories: updates.category
+          ? {
+              deleteMany: {},
+              create: [
+                {
+                  category: updates.category.name,
+                  type: updates.category.type,
+                },
+              ],
             }
           : undefined,
       },
@@ -71,6 +80,30 @@ export const updateClothing = async (
 
 export const deleteClothing = async (clothingId: string) => {
   try {
+    await prisma.fitClothing.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingSeason.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingTag.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingCategory.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.clothingOccasion.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
+    await prisma.worn.deleteMany({
+      where: { clothing_id: clothingId },
+    });
+
     const deletedClothing = await prisma.clothing.delete({
       where: {
         id: clothingId,
@@ -120,6 +153,44 @@ export const updateWornDate = async (clothingId: string) => {
     return updatedWorn;
   } catch (error) {
     console.error('Error updating worn date:', error);
+    throw error;
+  }
+};
+
+export const getSelectedClothingDetails = async (clothingIds: string[]) => {
+  try {
+    const clothes = await prisma.clothing.findMany({
+      where: { id: { in: clothingIds } },
+      include: {
+        tags: true,
+        categories: true,
+        seasons: true,
+        occasions: true,
+        worn: true,
+      },
+    });
+    return clothes;
+  } catch (error) {
+    console.error('Error fetching selected clothing details:', error);
+    throw error;
+  }
+};
+
+export const getUserClosetClothes = async (userId: string) => {
+  try {
+    const closetClothes = await prisma.clothing.findMany({
+      where: { closet: { user_id: userId } },
+      include: {
+        tags: true,
+        categories: true,
+        seasons: true,
+        occasions: true,
+        worn: true,
+      },
+    });
+    return closetClothes;
+  } catch (error) {
+    console.error('Error fetching user closet clothes:', error);
     throw error;
   }
 };

@@ -15,8 +15,17 @@ import {
 } from 'firebase/storage';
 import multer from 'multer';
 import firebaseConfig from '../../config/firebase.config';
+import {
+  getSelectedClothingDetails,
+  getUserClosetClothes,
+} from '../../controllers/clothing';
+import OpenAI from 'openai';
 
 const router = Router();
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 initializeApp(firebaseConfig);
 const storage = getStorage();
@@ -60,7 +69,9 @@ router.post(
       const fitData = {
         name,
         user_id,
-        piece_ids: Array.isArray(piece_ids) ? piece_ids : [piece_ids],
+        piece_ids: Array.isArray(piece_ids)
+          ? piece_ids
+          : String(piece_ids).split(','),
         thumbnail_url: downloadURL,
       };
 
@@ -128,6 +139,87 @@ router.post(
     }
   }
 );
+
+router.post('/complete-outfit', async (req: Request, res: Response) => {
+  const { userId, clothingIds } = req.body;
+
+  if (!userId || !clothingIds || !Array.isArray(clothingIds)) {
+    return res
+      .status(400)
+      .json({ error: 'userId and clothingIds are required' });
+  }
+
+  try {
+    const [selectedClothes, userCloset] = await Promise.all([
+      getSelectedClothingDetails(clothingIds),
+      getUserClosetClothes(userId),
+    ]);
+
+    if (selectedClothes.length === 0) {
+      return res
+        .status(404)
+        .json({ error: 'No selected clothing items found' });
+    }
+
+    if (userCloset.length === 0) {
+      return res.status(404).json({ error: 'No clothes found in user closet' });
+    }
+
+    const availableCloset = userCloset.filter(
+      (clothing) => !clothingIds.includes(clothing.id)
+    );
+
+    const prompt = `
+You are a fashion stylist. The user has selected the following clothing items:
+${JSON.stringify(selectedClothes, null, 2)}
+
+The user's closet contains the following clothing items (excluding the selected items):
+${JSON.stringify(availableCloset, null, 2)}
+
+Suggest a complete outfit by pairing items from the user's closet with the selected items. If there are not enough items to form a complete outfit, respond with an error message stating "Not enough clothes to complete an outfit." Otherwise, return only an array of clothing IDs representing the suggested outfit.
+`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const gptResponse = response.choices[0]?.message?.content || null;
+
+    if (!gptResponse) {
+      return res.status(500).json({ error: 'No valid response from OpenAI' });
+    }
+
+    if (gptResponse.includes('Not enough clothes')) {
+      return res
+        .status(400)
+        .json({ error: 'Not enough clothes to complete an outfit' });
+    }
+
+    let suggestedOutfitIds;
+
+    try {
+      const jsonMatch = gptResponse.match(/\[([\s\S]*?)\]/);
+      if (jsonMatch) {
+        suggestedOutfitIds = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('No valid JSON array found in GPT response');
+      }
+
+      suggestedOutfitIds = suggestedOutfitIds.filter(
+        (id: string) => !clothingIds.includes(id)
+      );
+    } catch (error) {
+      console.error('Error parsing GPT response:', error);
+      return res.status(500).json({ error: 'Failed to parse GPT response' });
+    }
+
+    return res.status(200).json({ suggestedOutfit: suggestedOutfitIds });
+  } catch (error) {
+    console.error('Error completing outfit:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 router.get('/', (req: Request, res: Response) => {
   res.send('Fits API');

@@ -8,22 +8,27 @@ export const createFit = async (body: FitProps) => {
         name: body.name || '',
         thumbnail_url: body.thumbnail_url || null,
         user_id: body.user_id,
-        clothes: {
-          connect: body.piece_ids.map((id: string) => ({ id })),
-        },
-      },
-      include: {
-        clothes: true,
       },
     });
 
-    return newFit;
+    await prisma.fitClothing.createMany({
+      data: body.piece_ids.map((id: string) => ({
+        fit_id: newFit.id,
+        clothing_id: id,
+      })),
+    });
+
+    const fitWithClothes = await prisma.fit.findUnique({
+      where: { id: newFit.id },
+      include: { clothes: true },
+    });
+
+    return fitWithClothes;
   } catch (error) {
     console.error('Error creating fit:', error);
     throw error;
   }
 };
-
 export const renameFit = async (fitId: string, newName: string) => {
   try {
     const updatedFit = await prisma.fit.update({
