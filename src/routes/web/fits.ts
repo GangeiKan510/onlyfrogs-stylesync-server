@@ -149,9 +149,13 @@ router.post('/complete-outfit', async (req: Request, res: Response) => {
   }
 
   try {
-    const userCloset = await getUserClosetClothes(userId);
+    const { status, user, message } = await getUserById(userId);
+    if (status !== 200) {
+      return res.status(status).json({ error: message });
+    }
 
-    if (userCloset.length === 0) {
+    const userCloset = user?.closets.flatMap((closet: any) => closet.clothes);
+    if (userCloset?.length === 0) {
       return res.status(404).json({ error: 'No clothes found in user closet' });
     }
 
@@ -160,20 +164,25 @@ router.post('/complete-outfit', async (req: Request, res: Response) => {
 
     if (Array.isArray(clothingIds) && clothingIds.length > 0) {
       selectedClothes = await getSelectedClothingDetails(clothingIds);
-      availableCloset = userCloset.filter(
-        (clothing) => !clothingIds.includes(clothing.id)
+      availableCloset = userCloset?.filter(
+        (clothing: any) => !clothingIds.includes(clothing.id)
       );
     }
 
     const prompt = `
-You are a fashion stylist. The user has selected the following clothing items:
+You are a fashion stylist. The user has the following preferences:
+- Favorite Colors: ${user?.favorite_colors.map((color: any) => color.name).join(', ')}
+- Preferred Brands: ${user?.preferred_brands.map((brand: any) => brand.name).join(', ')}
+- Style Preferences: ${user?.style_preferences.map((style: any) => style.name).join(', ')}
+- Skin Tone Complements: ${user?.skin_tone_complements.join(', ')}
+
+The user has selected the following clothing items:
 ${selectedClothes.length > 0 ? JSON.stringify(selectedClothes, null, 2) : 'None'}
 
 The user's closet contains the following clothing items:
 ${JSON.stringify(availableCloset, null, 2)}
 
-Consider the user's preferences (e.g., favorite colors, style preferences) when suggesting an outfit.
-Suggest a complete outfit by selecting items from the user's closet. If there are not enough items to form a complete outfit, respond with an error message stating "Not enough clothes to complete an outfit." Otherwise, return only an array of clothing IDs representing the suggested outfit.
+Consider the user's preferences (e.g., favorite colors, style preferences) when suggesting an outfit. They are Asian (Philippines - Filipinos), so take note of that as well in terms of culture. Suggest a complete outfit by selecting items from the user's closet that match their preferences. Return the suggested outfit as a **JSON array of clothing IDs only**. Do not include any additional text, explanation, or formatting.
 `;
 
     const response = await openai.chat.completions.create({
@@ -181,39 +190,33 @@ Suggest a complete outfit by selecting items from the user's closet. If there ar
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const gptResponse = response.choices[0]?.message?.content || null;
+    let gptResponse = response?.choices[0]?.message?.content?.trim() || null;
 
     if (!gptResponse) {
       return res.status(500).json({ error: 'No valid response from OpenAI' });
     }
 
-    if (gptResponse.includes('Not enough clothes')) {
-      return res
-        .status(400)
-        .json({ error: 'Not enough clothes to complete an outfit' });
-    }
-
-    let suggestedOutfitIds;
-
     try {
-      const jsonMatch = gptResponse.match(/\[([\s\S]*?)\]/);
-      if (jsonMatch) {
-        suggestedOutfitIds = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No valid JSON array found in GPT response');
+      gptResponse = gptResponse.replace(/```json|```/g, '').trim();
+
+      const suggestedOutfitIds = JSON.parse(gptResponse);
+
+      if (!Array.isArray(suggestedOutfitIds)) {
+        throw new Error('Parsed response is not a valid array');
       }
 
-      if (Array.isArray(clothingIds) && clothingIds.length > 0) {
-        suggestedOutfitIds = suggestedOutfitIds.filter(
-          (id: string) => !clothingIds.includes(id)
-        );
-      }
+      const filteredOutfitIds = clothingIds?.length
+        ? suggestedOutfitIds.filter((id) => !clothingIds.includes(id))
+        : suggestedOutfitIds;
+
+      return res.status(200).json({ suggestedOutfit: filteredOutfitIds });
     } catch (error) {
       console.error('Error parsing GPT response:', error);
-      return res.status(500).json({ error: 'Failed to parse GPT response' });
+      return res.status(500).json({
+        error: 'Failed to parse GPT response. Please try again.',
+        details: gptResponse,
+      });
     }
-
-    return res.status(200).json({ suggestedOutfit: suggestedOutfitIds });
   } catch (error) {
     console.error('Error completing outfit:', error);
     return res.status(500).json({ error: 'Internal server error' });
