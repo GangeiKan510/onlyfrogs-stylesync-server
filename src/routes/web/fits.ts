@@ -6,6 +6,7 @@ import {
   RenameFitSchema,
 } from '../../validators/schemas/schemas';
 import { createFit, deleteFit, renameFit } from '../../controllers/fits';
+import { getUserById } from '../../controllers/user';
 import { initializeApp } from 'firebase/app';
 import {
   getStorage,
@@ -143,40 +144,36 @@ router.post(
 router.post('/complete-outfit', async (req: Request, res: Response) => {
   const { userId, clothingIds } = req.body;
 
-  if (!userId || !clothingIds || !Array.isArray(clothingIds)) {
-    return res
-      .status(400)
-      .json({ error: 'userId and clothingIds are required' });
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
   }
 
   try {
-    const [selectedClothes, userCloset] = await Promise.all([
-      getSelectedClothingDetails(clothingIds),
-      getUserClosetClothes(userId),
-    ]);
-
-    if (selectedClothes.length === 0) {
-      return res
-        .status(404)
-        .json({ error: 'No selected clothing items found' });
-    }
+    const userCloset = await getUserClosetClothes(userId);
 
     if (userCloset.length === 0) {
       return res.status(404).json({ error: 'No clothes found in user closet' });
     }
 
-    const availableCloset = userCloset.filter(
-      (clothing) => !clothingIds.includes(clothing.id)
-    );
+    let selectedClothes: any = [];
+    let availableCloset = userCloset;
+
+    if (Array.isArray(clothingIds) && clothingIds.length > 0) {
+      selectedClothes = await getSelectedClothingDetails(clothingIds);
+      availableCloset = userCloset.filter(
+        (clothing) => !clothingIds.includes(clothing.id)
+      );
+    }
 
     const prompt = `
 You are a fashion stylist. The user has selected the following clothing items:
-${JSON.stringify(selectedClothes, null, 2)}
+${selectedClothes.length > 0 ? JSON.stringify(selectedClothes, null, 2) : 'None'}
 
-The user's closet contains the following clothing items (excluding the selected items):
+The user's closet contains the following clothing items:
 ${JSON.stringify(availableCloset, null, 2)}
 
-Suggest a complete outfit by pairing items from the user's closet with the selected items. If there are not enough items to form a complete outfit, respond with an error message stating "Not enough clothes to complete an outfit." Otherwise, return only an array of clothing IDs representing the suggested outfit.
+Consider the user's preferences (e.g., favorite colors, style preferences) when suggesting an outfit.
+Suggest a complete outfit by selecting items from the user's closet. If there are not enough items to form a complete outfit, respond with an error message stating "Not enough clothes to complete an outfit." Otherwise, return only an array of clothing IDs representing the suggested outfit.
 `;
 
     const response = await openai.chat.completions.create({
@@ -206,9 +203,11 @@ Suggest a complete outfit by pairing items from the user's closet with the selec
         throw new Error('No valid JSON array found in GPT response');
       }
 
-      suggestedOutfitIds = suggestedOutfitIds.filter(
-        (id: string) => !clothingIds.includes(id)
-      );
+      if (Array.isArray(clothingIds) && clothingIds.length > 0) {
+        suggestedOutfitIds = suggestedOutfitIds.filter(
+          (id: string) => !clothingIds.includes(id)
+        );
+      }
     } catch (error) {
       console.error('Error parsing GPT response:', error);
       return res.status(500).json({ error: 'Failed to parse GPT response' });
