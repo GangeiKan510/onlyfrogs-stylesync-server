@@ -45,6 +45,10 @@ export const renameFit = async (fitId: string, newName: string) => {
 
 export const deleteFit = async (fitId: string) => {
   try {
+    await prisma.fitClothing.deleteMany({
+      where: { fit_id: fitId },
+    });
+
     const deletedFit = await prisma.fit.delete({
       where: { id: fitId },
     });
