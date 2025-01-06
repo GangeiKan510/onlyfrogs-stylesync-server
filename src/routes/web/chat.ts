@@ -9,7 +9,7 @@ import { sendMessage } from '../../controllers/chat';
 import { getUserById } from '../../controllers/user';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { deductTokens } from '../../controllers/chat';
+import { deductTokens, refreshTokens } from '../../controllers/chat';
 
 const router = Router();
 
@@ -548,6 +548,26 @@ router.post(
     }
   }
 );
+
+router.post('/refresh-tokens', async (req: Request, res: Response) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  try {
+    const result = await refreshTokens(userId);
+
+    return res.status(result.status).json(result);
+  } catch (error: any) {
+    console.error('Error refreshing tokens:', error.message);
+    return res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+});
 
 router.delete(
   '/delete-chat-session-messages',
