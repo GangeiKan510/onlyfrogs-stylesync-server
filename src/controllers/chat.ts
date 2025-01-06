@@ -177,3 +177,40 @@ export const deductTokens = async (userId: string, amount: number = 15) => {
     };
   }
 };
+
+export const refreshTokens = async (userId: string) => {
+  try {
+    const userTokens = await prisma.userToken.findFirst({
+      where: { user_id: userId },
+    });
+
+    if (!userTokens) {
+      return {
+        status: 404,
+        message: 'User tokens not found',
+      };
+    }
+
+    const refreshedTokens = await prisma.userToken.update({
+      where: { id: userTokens.id },
+      data: {
+        amount: 150,
+        updated_at: new Date(),
+      },
+    });
+
+    return {
+      status: 200,
+      message: 'Tokens refreshed successfully',
+      tokens: refreshedTokens.amount,
+      updated_at: refreshedTokens.updated_at,
+    };
+  } catch (error: any) {
+    console.error('Error refreshing tokens:', error.message);
+    return {
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message,
+    };
+  }
+};
