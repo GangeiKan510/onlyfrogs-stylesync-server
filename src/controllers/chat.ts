@@ -141,6 +141,16 @@ export const deductTokens = async (userId: string, amount: number = 15) => {
     const userTokens = await prisma.userToken.findFirst({
       where: { user_id: userId },
     });
+    const userSelected = await prisma.user.findFirst({
+      where: { id: userId },
+    });
+
+    if (userSelected?.role !== 0) {
+      return {
+        status: 200,
+        message: 'Admin account detected',
+      };
+    }
 
     if (!userTokens) {
       return {
