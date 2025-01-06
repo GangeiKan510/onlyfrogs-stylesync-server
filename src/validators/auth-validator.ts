@@ -28,26 +28,25 @@ export const assertJwtExist =
   };
 
 export const validateTokenOwnership = () => {
-  return (req: Request | any, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (excludedPaths.includes(req.path) || req.query.skipAuth === 'true') {
         return next();
       }
 
-      if (!req.jwt) {
-        throw createError401(
-          'Token verification required before ownership check.'
-        );
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw createError401('Authorization token missing or incorrect.');
       }
 
-      const userIdFromToken = req.jwt.uid;
+      const token = authHeader.split(' ')[1];
 
-      req.userId = userIdFromToken;
+      const decodedToken = await firebaseAdminApp.auth().verifyIdToken(token);
 
       next();
     } catch (err: any) {
-      console.error('Validation Error:', err.message);
-      next(createError401(err.message || 'Unauthorized access.'));
+      console.error('Token validation failed:', err.message);
+      next(createError401('Unauthorized access.'));
     }
   };
 };
