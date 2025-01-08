@@ -43,6 +43,11 @@ export const validateTokenOwnership = () => {
 
       const decodedToken = await firebaseAdminApp.auth().verifyIdToken(token);
 
+      const uidFromHeader = req.headers['x-user-id'];
+      if (!uidFromHeader || uidFromHeader !== decodedToken.uid) {
+        throw createError401('Token ownership validation failed.');
+      }
+
       next();
     } catch (err: any) {
       console.error('Token validation failed:', err.message);
